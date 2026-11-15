@@ -626,7 +626,7 @@
   }
 
   /* ---------- 내 주문 확인 ---------- */
-  const BADGE = { '입금 대기':'b-wait', '입금 확인 완료':'b-paid', '발송 준비 중':'b-ship', '취소됨':'b-cancel' };
+  const BADGE = { '입금 확인 중':'b-wait', '입금 확인 완료':'b-paid', '발송 준비 중':'b-ship', '취소됨':'b-cancel' };
   function lookup(){
     const name = $('lkName').value.trim(), phone = $('lkPhone').value.trim();
     if (!name || !mobileOk(phone)) { $('e-lk').classList.add('show'); return; }
@@ -656,7 +656,7 @@
           ${esc(x.addr)}<br>${esc(x.items)}${x.memo ? '<br><span style="color:#666">메모: ' + esc(x.memo) + '</span>' : ''}</div>`).join('')}
         <div class="meta">보내는 분 <b>${esc(o.sender)}</b> · 입금자명 <b>${esc(o.payer)}</b></div>
         <div class="meta">${o.status === '취소됨' ? '취소된 주문이에요' : '입금할 금액'} <b class="total">${won(o.total)}</b></div>
-        ${o.status === '입금 대기' ? `<div class="bank" style="font-size:15px">입금 계좌<b style="font-size:17px">${esc(d.bank || '')}</b></div>` : ''}
+        ${o.status === '입금 확인 중' ? `<div class="bank" style="font-size:15px">입금 계좌<b style="font-size:17px">${esc(d.bank || '')}</b></div>` : ''}
         ${o.canCancel ? `<button type="button" class="btn btn-line" data-cancel="${esc(o.orderId)}" style="margin-top:10px">주문 취소하기</button>
           <p class="hint center">${esc(o.cancelUntil)}까지 취소할 수 있어요</p>` : ''}
         ${!o.canCancel && o.status !== '취소됨' ? `<p class="hint">취소·변경은 ${esc(d.phone || '농장')}로 연락 주세요.</p>` : ''}

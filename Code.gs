@@ -4,7 +4,7 @@
  * - 주문서에서 들어온 주문을 [주문] 시트에 쌓습니다. 여러 곳에 보내는 주문은 배송지마다 한 줄씩 들어가고
  *   주문번호가 같습니다. [입금할 금액]은 그 주문의 첫 줄에만 적혀요(합계).
  * - [입금확인]은 같은 주문 중 아무 줄이나 체크하면 나머지 줄도 같이 체크됩니다.
- * - 손님은 주문서의 [내 주문 확인]에서 이름 + 휴대폰 번호로 주문 상태(입금 대기 / 입금 확인 완료 / 발송 준비 중 / 취소됨)를 보고,
+ * - 손님은 주문서의 [내 주문 확인]에서 이름 + 휴대폰 번호로 주문 상태(입금 확인 중 / 입금 확인 완료 / 발송 준비 중 / 취소됨)를 보고,
  *   주문 후 정해진 시간(기본 2시간) 안에, 입금 확인 전이면 직접 취소할 수 있어요.
  * - 가격·품절·계좌·공지·안내사항은 [가격표], [설정] 시트에서 바꾸면 바로 반영됩니다.
  * - 메뉴 [🍎 주문관리 > 로젠 송장 파일 만들기] : 입금확인된(취소 안 된) 주문만 로젠 업로드용 엑셀로 만듭니다.
@@ -226,7 +226,7 @@ function statusOfRows(rows) {
   if (rows.some(x => String(x.g('취소일시')).trim())) return '취소됨';
   if (rows.some(x => String(x.g('송장출력')).trim())) return '발송 준비 중';
   if (rows.some(x => x.g('입금확인') === true)) return '입금 확인 완료';
-  return '입금 대기';
+  return '입금 확인 중';
 }
 
 /* ---------- 주문 접수 ---------- */
@@ -358,7 +358,7 @@ function lookupOrders(d) {
         memo: String(x.g('배송 메모'))
       })),
       status: status,
-      canCancel: status === '입금 대기' && s.cancelHours > 0 && now < deadline,
+      canCancel: status === '입금 확인 중' && s.cancelHours > 0 && now < deadline,
       cancelUntil: deadline ? Utilities.formatDate(new Date(deadline), TZ, 'MM월 dd일 HH:mm') : ''
     };
   });
@@ -378,7 +378,7 @@ function cancelOrder(d) {
     const st = statusOfRows(hit.rows);
     const call = s.phone ? '\n' + s.phone + '로 연락 주세요.' : '';
     if (st === '취소됨') return json({ ok: false, error: '이미 취소된 주문이에요.' });
-    if (st !== '입금 대기') return json({ ok: false, error: '입금이 확인된 주문은 직접 취소할 수 없어요.' + call });
+    if (st !== '입금 확인 중') return json({ ok: false, error: '입금이 확인된 주문은 직접 취소할 수 없어요.' + call });
     const t = orderTime(hit.rows[0].g('주문일시'));
     if (!t || s.cancelHours <= 0 || Date.now() > t.getTime() + s.cancelHours * 3600 * 1000)
       return json({ ok: false, error: '취소 가능 시간(' + s.cancelHours + '시간)이 지났어요.' + call });
