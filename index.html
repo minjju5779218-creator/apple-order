@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>사과 주문서</title>
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script>
+  /* ====== 여기 한 줄만 바꾸세요: 구글 앱스 스크립트 웹앱 주소 ====== */
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw03IqPpLWnlHFuk4dq0r9b38EQ4gRoQcslgPIs3GB6P0jR_x8Yy4Rq84NIVMM3LddB/exec";
+</script>
+<style>
+  :root{
+    --red:#c8322b; --red-d:#a3241e; --red-l:#fdeceb;
+    --green:#3f8f3a; --ink:#222; --sub:#666; --line:#e4e0dc; --bg:#faf7f4;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
+       background:var(--bg);color:var(--ink);font-size:17px;line-height:1.5;padding-bottom:110px}
+  header{background:var(--red);color:#fff;padding:22px 18px 18px;text-align:center}
+  header h1{margin:0;font-size:24px}
+  header p{margin:6px 0 0;font-size:15px;opacity:.95;white-space:pre-line}
+  main{max-width:560px;margin:0 auto;padding:14px}
+  section{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 16px;margin-bottom:14px}
+  h2{font-size:19px;margin:0 0 12px}
+  h2 small{font-weight:400;color:var(--sub);font-size:14px}
+  .group{margin-bottom:16px}
+  .group:last-child{margin-bottom:0}
+  .group h3{font-size:16px;margin:0 0 6px;padding:6px 10px;border-radius:8px;background:var(--red-l);color:var(--red-d)}
+  .item{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid #f0ece8}
+  .item:last-child{border-bottom:0}
+  .item .nm{flex:1;font-weight:600}
+  .item .pr{color:var(--sub);font-size:15px;min-width:78px;text-align:right}
+  .item.soldout{opacity:.45}
+  .item.on .nm{color:var(--red-d)}
+  .step{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .step button{width:40px;height:40px;border:0;background:#f4f1ee;font-size:22px;color:var(--ink);cursor:pointer}
+  .step button:active{background:#e8e3de}
+  .step span{width:34px;text-align:center;font-weight:700}
+  .tag{font-size:13px;color:#fff;background:#999;border-radius:6px;padding:3px 8px}
+  label.f{display:block;font-size:15px;color:var(--sub);margin:12px 0 5px}
+  label.f:first-of-type{margin-top:0}
+  input[type=text],input[type=tel],textarea{width:100%;font-size:17px;padding:12px;border:1px solid #cfc9c3;border-radius:10px;background:#fff;font-family:inherit}
+  input[readonly]{background:#f6f4f2;color:#333}
+  textarea{min-height:64px;resize:vertical}
+  input:focus,textarea:focus{outline:2px solid var(--red);border-color:transparent}
+  .row{display:flex;gap:8px}
+  .row>*{flex:1}
+  .btn{display:block;width:100%;padding:14px;font-size:17px;font-weight:700;border-radius:12px;border:0;cursor:pointer;font-family:inherit}
+  .btn-red{background:var(--red);color:#fff}
+  .btn-red:disabled{background:#d9a6a3}
+  .btn-line{background:#fff;color:var(--ink);border:1px solid #cfc9c3}
+  .btn-addr{background:var(--ink);color:#fff;margin-bottom:8px}
+  .chk{display:flex;align-items:center;gap:8px;font-size:16px;margin-bottom:6px;cursor:pointer}
+  .chk input{width:22px;height:22px;accent-color:var(--red)}
+  .err{color:var(--red);font-size:14px;margin-top:5px;display:none}
+  .err.show{display:block}
+  .bad{border-color:var(--red)!important}
+  .hint{font-size:14px;color:var(--sub);margin-top:6px}
+  .warn{font-size:14px;color:#8a5a00;background:#fff6dd;border-radius:8px;padding:8px 10px;margin-top:8px;display:none}
+  .bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);
+       padding:10px 14px calc(10px + env(safe-area-inset-bottom))}
+  .bar .in{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:12px}
+  .bar .sum{flex:1;font-size:14px;color:var(--sub)}
+  .bar .sum b{display:block;font-size:21px;color:var(--ink)}
+  .bar .btn{width:auto;padding:14px 26px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;z-index:50;align-items:flex-end;justify-content:center}
+  .modal.show{display:flex}
+  .sheet{background:#fff;width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom))}
+  .sheet h2{text-align:center}
+  #postWrap{height:70vh;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  table.sum{width:100%;border-collapse:collapse;font-size:16px;margin:4px 0 12px}
+  table.sum th{text-align:left;color:var(--sub);font-weight:400;padding:7px 0;width:92px;vertical-align:top}
+  table.sum td{padding:7px 0;font-weight:600}
+  table.sum tr{border-bottom:1px solid #f0ece8}
+  .total{font-size:20px;color:var(--red-d)}
+  .bank{background:var(--red-l);border-radius:12px;padding:14px;text-align:center;margin:12px 0;font-size:17px}
+  .bank b{display:block;font-size:19px;margin-top:4px}
+  .center{text-align:center}
+  #loading{text-align:center;padding:60px 0;color:var(--sub)}
+  .closed{text-align:center;padding:40px 10px;font-size:18px}
+  footer{text-align:center;font-size:14px;color:var(--sub);padding:10px 0 20px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="farmName">사과 주문서</h1>
+  <p id="notice"></p>
+</header>
+
+<main>
+  <div id="loading">가격표를 불러오는 중이에요…</div>
+
+  <form id="form" hidden autocomplete="on" novalidate>
+    <section>
+      <h2>1. 상품 고르기 <small>개수를 눌러 담아주세요</small></h2>
+      <div id="products"></div>
+      <div class="err" id="e-items">상품을 하나 이상 골라주세요.</div>
+    </section>
+
+    <section>
+      <h2>2. 주문하시는 분</h2>
+      <label class="f" for="buyerName">이름</label>
+      <input type="text" id="buyerName" autocomplete="name" placeholder="예) 김사과">
+      <div class="err" id="e-buyerName">이름을 적어주세요.</div>
+      <label class="f" for="buyerPhone">휴대폰 번호</label>
+      <input type="tel" id="buyerPhone" inputmode="numeric" autocomplete="tel" placeholder="010-0000-0000">
+      <div class="err" id="e-buyerPhone">휴대폰 번호를 정확히 적어주세요.</div>
+    </section>
+
+    <section>
+      <h2>3. 받으시는 분</h2>
+      <label class="chk"><input type="checkbox" id="same" checked> 주문하시는 분과 같아요</label>
+      <div id="recvBox" hidden>
+        <label class="f" for="recvName">받는 분 이름</label>
+        <input type="text" id="recvName" placeholder="예) 이과수">
+        <div class="err" id="e-recvName">받는 분 이름을 적어주세요.</div>
+        <label class="f" for="recvPhone">받는 분 휴대폰 번호</label>
+        <input type="tel" id="recvPhone" inputmode="numeric" placeholder="010-0000-0000">
+        <div class="err" id="e-recvPhone">받는 분 휴대폰 번호를 정확히 적어주세요.</div>
+      </div>
+
+      <label class="f">받는 주소</label>
+      <button type="button" class="btn btn-addr" id="addrBtn">🔍 주소 검색하기</button>
+      <div class="row">
+        <input type="text" id="zip" readonly placeholder="우편번호" style="flex:0 0 110px">
+        <input type="text" id="addr" readonly placeholder="주소 검색 버튼을 눌러주세요">
+      </div>
+      <div class="err" id="e-addr">주소 검색 버튼을 눌러 주소를 골라주세요.</div>
+      <label class="f" for="addr2">상세주소 (동·호수 등)</label>
+      <input type="text" id="addr2" placeholder="예) 101동 1203호">
+      <div class="err" id="e-addr2">아파트는 동·호수를 꼭 적어주세요.</div>
+      <div class="hint">옛날 주소(지번)나 아파트 이름으로 검색해도 찾을 수 있어요.</div>
+      <div class="warn" id="islandWarn"></div>
+    </section>
+
+    <section>
+      <h2>4. 입금 · 배송 메모</h2>
+      <label class="f" for="payer">입금자명</label>
+      <input type="text" id="payer" placeholder="통장에 찍힐 이름">
+      <div class="hint">주문자 이름과 다르게 입금하시면 꼭 바꿔주세요.</div>
+      <div class="err" id="e-payer">입금자명을 적어주세요.</div>
+      <label class="f" for="memo">배송 메모 (선택)</label>
+      <textarea id="memo" placeholder="예) 부재 시 문 앞에 놓아주세요"></textarea>
+    </section>
+
+    <footer id="contact"></footer>
+  </form>
+
+  <div id="closedBox" class="closed" hidden></div>
+</main>
+
+<div class="bar" id="bar" hidden>
+  <div class="in">
+    <div class="sum"><span id="sumBoxes">0박스</span><b id="sumTotal">0원</b></div>
+    <button type="button" class="btn btn-red" id="nextBtn">주문하기</button>
+  </div>
+</div>
+
+<!-- 주소 검색 -->
+<div class="modal" id="postModal">
+  <div class="sheet">
+    <h2>주소 검색</h2>
+    <div id="postWrap"></div>
+    <button type="button" class="btn btn-line" style="margin-top:10px" onclick="closeModal('postModal')">닫기</button>
+  </div>
+</div>
+
+<!-- 주문 확인 -->
+<div class="modal" id="confirmModal">
+  <div class="sheet">
+    <h2>주문 내용을 확인해주세요</h2>
+    <div id="confirmBody"></div>
+    <div class="row" style="margin-top:6px">
+      <button type="button" class="btn btn-line" onclick="closeModal('confirmModal')">고치기</button>
+      <button type="button" class="btn btn-red" id="sendBtn">이대로 주문</button>
+    </div>
+  </div>
+</div>
+
+<!-- 주문 완료 -->
+<div class="modal" id="doneModal">
+  <div class="sheet">
+    <h2>🍎 주문이 접수됐어요</h2>
+    <div id="doneBody"></div>
+    <button type="button" class="btn btn-red" onclick="location.reload()">확인</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const won = n => Number(n).toLocaleString('ko-KR') + '원';
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  let S = {};          // 설정
+  let P = [];          // 상품 [{group,name,price,soldOut}]
+  const qty = {};      // key -> 수량
+  let picked = null;   // 주소 검색 결과
+  const key = p => p.group + '|' + p.name;
+
+  /* ---------- 불러오기 ---------- */
+  // 웹앱 주소를 아직 안 넣었으면 '미리보기' 모드로 열립니다 (주문은 저장되지 않음)
+  const DEMO = !/^https:\/\/script\.google\.com\//.test(SCRIPT_URL);
+  const demoData = () => {
+    const g = (grp, list) => list.map(([n,p]) => ({group:grp, name:n, price:p, soldOut:false}));
+    return { ok:true,
+      settings:{ farmName:'○○농원', bank:'○○은행 000-0000-0000 (예금주 ○○○)', phone:'010-0000-0000',
+        notice:'[미리보기] 웹앱 주소를 넣기 전이라 주문이 저장되지 않아요', open:true,
+        islandFee:3000, islandFeeMode:'박스당', islandAreas:['제주','울릉군','옹진군'] },
+      products: [].concat(
+        g('사과 10kg', [['20과',130000],['22과',120000],['24과',110000],['26과',100000],['30과',90000],['32과',85000],['36과',75000],['40과',65000],['42과',60000]]),
+        g('사과 5kg', [['10과',70000],['11과',65000],['12과',60000],['13과',55000],['15과',50000],['16과',45000],['18과',40000],['20과',35000]]),
+        g('사과즙', [['1박스 (50포)',30000],['2박스 (100포)',50000]])) };
+  };
+  if (DEMO) window.fetch = (u, o) => Promise.resolve({ json: () =>
+    o && o.method === 'POST' ? { ok:true, orderId:'미리보기-001', total: order._k.total } : demoData() });
+
+  fetch(SCRIPT_URL)
+    .then(r => r.json())
+    .then(d => {
+      if (!d.ok) throw new Error(d.error || 'load');
+      S = d.settings; P = d.products;
+      if (S.farmName) { $('farmName').textContent = S.farmName + ' 사과 주문서'; document.title = $('farmName').textContent; }
+      $('notice').textContent = S.notice || '';
+      $('contact').innerHTML = S.phone ? '문의 · ' + esc(S.phone) : '';
+      $('loading').hidden = true;
+      if (S.open === false) {
+        $('closedBox').hidden = false;
+        $('closedBox').innerHTML = '지금은 주문을 받지 않아요.' + (S.phone ? '<br><br>문의: ' + esc(S.phone) : '');
+        return;
+      }
+      renderProducts();
+      $('form').hidden = false; $('bar').hidden = false;
+    })
+    .catch(() => {
+      $('loading').innerHTML = '가격표를 불러오지 못했어요.<br>잠시 후 다시 열어주세요.';
+    });
+
+  /* ---------- 상품 ---------- */
+  function renderProducts(){
+    const groups = [];
+    P.forEach(p => { let g = groups.find(x => x.name === p.group); if(!g){ g={name:p.group,items:[]}; groups.push(g);} g.items.push(p); });
+    $('products').innerHTML = groups.map(g => `
+      <div class="group"><h3>${esc(g.name)}</h3>
+        ${g.items.map(p => {
+          const k = esc(key(p));
+          return `<div class="item ${p.soldOut?'soldout':''}" data-k="${k}">
+            <div class="nm">${esc(p.name)}</div>
+            <div class="pr">${won(p.price)}</div>
+            ${p.soldOut ? '<span class="tag">품절</span>' :
+              `<div class="step"><button type="button" data-d="-1" aria-label="빼기">−</button><span>0</span><button type="button" data-d="1" aria-label="더하기">+</button></div>`}
+          </div>`;}).join('')}
+      </div>`).join('');
+    $('products').addEventListener('click', e => {
+      const b = e.target.closest('button[data-d]'); if(!b) return;
+      const row = b.closest('.item'); const k = row.dataset.k;
+      qty[k] = Math.max(0, Math.min(50, (qty[k]||0) + Number(b.dataset.d)));
+      row.querySelector('.step span').textContent = qty[k];
+      row.classList.toggle('on', qty[k] > 0);
+      $('e-items').classList.remove('show');
+      updateSum();
+    });
+  }
+
+  function cart(){
+    return P.filter(p => !p.soldOut && qty[key(p)] > 0).map(p => ({group:p.group, name:p.name, price:p.price, qty:qty[key(p)]}));
+  }
+  function isIsland(){
+    if (!picked) return false;
+    const full = picked.addr;
+    return (S.islandAreas || []).some(a => a && full.includes(a));
+  }
+  function calc(){
+    const c = cart();
+    const boxes = c.reduce((s,i)=>s+i.qty,0);
+    const sub = c.reduce((s,i)=>s+i.qty*i.price,0);
+    let fee = 0;
+    if (isIsland() && boxes > 0) fee = S.islandFeeMode === '주문당' ? S.islandFee : S.islandFee * boxes;
+    return {c, boxes, sub, fee, total: sub + fee};
+  }
+  function updateSum(){
+    const k = calc();
+    $('sumBoxes').textContent = k.boxes + '박스' + (k.fee ? ' (추가 택배비 포함)' : '');
+    $('sumTotal').textContent = won(k.total);
+  }
+
+  /* ---------- 입력 ---------- */
+  function fmtPhone(v){
+    const d = v.replace(/\D/g,'').slice(0,11);
+    if (d.length < 4) return d;
+    if (d.length < 8) return d.slice(0,3)+'-'+d.slice(3);
+    if (d.length === 10) return d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6);
+    return d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7);
+  }
+  ['buyerPhone','recvPhone'].forEach(id => $(id).addEventListener('input', e => { e.target.value = fmtPhone(e.target.value); }));
+  $('same').addEventListener('change', e => { $('recvBox').hidden = e.target.checked; });
+  let payerTouched = false;
+  $('payer').addEventListener('input', () => payerTouched = true);
+  $('buyerName').addEventListener('input', e => { if(!payerTouched) $('payer').value = e.target.value; });
+  document.querySelectorAll('input,textarea').forEach(el => el.addEventListener('input', () => {
+    el.classList.remove('bad'); const er = $('e-'+el.id); if (er) er.classList.remove('show');
+  }));
+
+  /* ---------- 주소 검색 (카카오 우편번호) ---------- */
+  $('addrBtn').addEventListener('click', () => {
+    $('postWrap').innerHTML = '';
+    $('postModal').classList.add('show');
+    new daum.Postcode({
+      width:'100%', height:'100%',
+      oncomplete: function(d){
+        let extra = '';
+        if (d.bname && /[동로가]$/.test(d.bname)) extra += d.bname;
+        if (d.buildingName && d.apartment === 'Y') extra += (extra ? ', ' : '') + d.buildingName;
+        const road = d.roadAddress || d.autoRoadAddress || d.address;
+        const addr = road + (extra ? ' (' + extra + ')' : '');
+        picked = { zip: d.zonecode, addr, apt: d.apartment === 'Y', jibun: d.jibunAddress || d.autoJibunAddress || '' };
+        $('zip').value = d.zonecode; $('addr').value = addr;
+        $('addr').classList.remove('bad'); $('e-addr').classList.remove('show');
+        closeModal('postModal');
+        const w = $('islandWarn');
+        if (isIsland()) {
+          w.style.display = 'block';
+          w.textContent = '제주·도서산간 지역이라 택배비 ' + won(S.islandFee) + (S.islandFeeMode === '주문당' ? '이' : '(박스당)이') + ' 추가돼요.';
+        } else w.style.display = 'none';
+        updateSum();
+        setTimeout(() => $('addr2').focus(), 200);
+      }
+    }).embed($('postWrap'));
+  });
+  window.closeModal = id => $(id).classList.remove('show');
+
+  /* ---------- 확인 ---------- */
+  const phoneOk = v => /^01[016789]-?\d{3,4}-?\d{4}$/.test(v);
+  function fail(id, errId){ $(id) && $(id).classList.add('bad'); $(errId||('e-'+id)).classList.add('show'); return false; }
+
+  function collect(){
+    const v = id => $(id).value.trim();
+    let ok = true, first = null;
+    const mark = (cond, id, errId) => { if(!cond){ ok = fail(id, errId); first = first || $(errId||('e-'+id)); } };
+    const k = calc();
+    if (!k.boxes) { $('e-items').classList.add('show'); ok = false; first = first || $('e-items'); }
+    mark(v('buyerName'), 'buyerName');
+    mark(phoneOk(v('buyerPhone')), 'buyerPhone');
+    const same = $('same').checked;
+    if (!same) { mark(v('recvName'), 'recvName'); mark(phoneOk(v('recvPhone')), 'recvPhone'); }
+    mark(picked, 'addr');
+    if (picked && picked.apt) mark(v('addr2'), 'addr2');
+    mark(v('payer'), 'payer');
+    if (!ok) { first.closest('section').scrollIntoView({behavior:'smooth', block:'start'}); return null; }
+    return {
+      buyerName: v('buyerName'), buyerPhone: fmtPhone(v('buyerPhone')),
+      recvName: same ? v('buyerName') : v('recvName'),
+      recvPhone: same ? fmtPhone(v('buyerPhone')) : fmtPhone(v('recvPhone')),
+      zip: picked.zip, addr: picked.addr, addr2: v('addr2'),
+      payer: v('payer'), memo: v('memo'),
+      items: k.c.map(i => ({group:i.group, name:i.name, qty:i.qty})),
+      _k: k
+    };
+  }
+
+  let order = null;
+  $('nextBtn').addEventListener('click', () => {
+    order = collect(); if (!order) return;
+    const k = order._k;
+    $('confirmBody').innerHTML = `
+      <table class="sum">
+        <tr><th>상품</th><td>${k.c.map(i=>esc(i.group+' '+i.name)+' × '+i.qty).join('<br>')}</td></tr>
+        <tr><th>받는 분</th><td>${esc(order.recvName)} · ${esc(order.recvPhone)}</td></tr>
+        <tr><th>주소</th><td>(${esc(order.zip)}) ${esc(order.addr)}<br>${esc(order.addr2) || '<span style="color:#999">상세주소 없음</span>'}</td></tr>
+        <tr><th>입금자명</th><td>${esc(order.payer)}</td></tr>
+        ${k.fee ? `<tr><th>추가 택배비</th><td>${won(k.fee)}</td></tr>` : ''}
+        <tr><th>입금할 금액</th><td class="total">${won(k.total)}</td></tr>
+      </table>
+      <p class="hint center">주소와 연락처가 맞는지 한 번 더 확인해주세요.</p>`;
+    $('confirmModal').classList.add('show');
+  });
+
+  /* ---------- 전송 ---------- */
+  $('sendBtn').addEventListener('click', () => {
+    const b = $('sendBtn'); b.disabled = true; b.textContent = '보내는 중…';
+    const body = Object.assign({}, order); delete body._k;
+    fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify(body) })
+      .then(r => r.json())
+      .then(d => {
+        if (!d.ok) throw new Error(d.error || '주문을 접수하지 못했어요.');
+        closeModal('confirmModal');
+        $('doneBody').innerHTML = `
+          <table class="sum">
+            <tr><th>주문번호</th><td>${esc(d.orderId)}</td></tr>
+            <tr><th>입금할 금액</th><td class="total">${won(d.total)}</td></tr>
+            <tr><th>입금자명</th><td>${esc(order.payer)}</td></tr>
+          </table>
+          <div class="bank">아래 계좌로 입금해주세요<b>${esc(d.bank || S.bank || '')}</b></div>
+          <p class="hint center">입금이 확인되면 순서대로 보내드려요.<br>이 화면을 캡처해 두시면 편해요.</p>`;
+        $('doneModal').classList.add('show');
+      })
+      .catch(err => {
+        alert((err && err.message && !/fetch|Network|JSON/i.test(err.message) ? err.message : '주문 전송에 실패했어요.') +
+              '\n잠시 후 다시 눌러주시거나' + (S.phone ? ' ' + S.phone + '로' : '') + ' 문자 주세요.');
+        b.disabled = false; b.textContent = '이대로 주문';
+      });
+  });
+})();
+</script>
+</body>
+</html>
