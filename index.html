@@ -110,9 +110,8 @@
   .ocard .meta{font-size:15px;color:var(--sub);margin-top:8px}
   .ocard .meta b{color:var(--ink)}
   .ocard.cancelled{opacity:.6}
-  .editbar{display:flex;gap:10px;align-items:center;background:#eef4ff;border:1px solid #c9dcfb;border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:15px}
-  .editbar>div{flex:1}
-  .chg{font-size:12px;color:#1d4f91;background:#e3eefc;border-radius:6px;padding:2px 6px;margin-left:6px;font-weight:700}
+  .chg{display:inline-block;white-space:nowrap;font-size:12px;color:#1d4f91;background:#e3eefc;border-radius:6px;padding:1px 6px;margin-left:6px;font-weight:700;vertical-align:2px}
+  .ocard .top>div:first-child{min-width:0}
   .empty-msg{text-align:center;color:var(--sub);padding:30px 0}
 </style>
 </head>
@@ -132,10 +131,6 @@
 
   <!-- ================= 주문하기 ================= -->
   <div id="orderView" hidden>
-    <div class="editbar" id="editBar" hidden>
-      <div>✏️ <b id="editId"></b> 주문을 변경하고 있어요.<br><span class="hint" style="margin:0">고친 뒤 아래 [변경하기]를 눌러주세요. 주문자 이름·번호는 바꿀 수 없어요.</span></div>
-      <button type="button" class="btn btn-line btn-sm" id="editQuit">그만두기</button>
-    </div>
     <div class="guide" id="guide" hidden></div>
     <div id="closedBox" class="closed" hidden></div>
 
@@ -325,7 +320,11 @@
     $('bar').hidden = v !== 'order' || S.open === false;
     window.scrollTo(0, 0);
   }
-  $('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.v); });
+  $('tabs').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.v === 'lookup' && editing) resetForm();   // 변경하다가 조회로 가면 변경 그만두기 (원래 주문 그대로)
+    showTab(b.dataset.v);
+  });
 
   /* ---------- 입력 도우미 ---------- */
   function fmtPhone(v){
@@ -660,7 +659,6 @@
   let lastOrders = [];
   function setEditing(id){
     editing = id;
-    $('editBar').hidden = !id; $('editId').textContent = id ? '주문번호 ' + id : '';
     ['buyerName','buyerPhone'].forEach(k => { $(k).readOnly = !!id; });
     $('nextBtn').textContent = id ? '변경하기' : '주문하기';
   }
@@ -696,10 +694,7 @@
     showTab('order');
     if (missing.length) alert('지금 품절이거나 없어진 상품은 빠졌어요:\n' + missing.join('\n') + '\n다른 상품을 골라주세요.');
   }
-  $('editQuit').addEventListener('click', () => {
-    if (!confirm('변경을 그만두고 원래 주문을 그대로 둘까요?')) return;
-    resetForm(); showTab('lookup');
-  });
+
 
   /* ---------- 내 주문 확인 ---------- */
   const BADGE = { '입금 확인 중':'b-wait', '입금 확인 완료':'b-paid', '발송 준비 중':'b-ship', '취소됨':'b-cancel' };
@@ -749,7 +744,7 @@
     $('lkResult').innerHTML = d.orders.map(o => `
       <div class="ocard ${o.status === '취소됨' ? 'cancelled' : ''}">
         <div class="top">
-          <div><div class="id">주문번호 ${esc(o.orderId)}${o.changed ? '<span class="chg">변경됨</span>' : ''}</div><div class="dt">${esc(o.date)}</div></div>
+          <div><div class="id">주문번호 ${esc(o.orderId)}</div><div class="dt">${esc(o.date)}${o.changed ? '<span class="chg">변경됨</span>' : ''}</div></div>
           <span class="badge ${BADGE[o.status] || 'b-wait'}">${o.status === '입금 확인 완료' ? '✓ ' : ''}${esc(o.status)}</span>
         </div>
         ${o.dests.map((x, i) => `<div class="cdest">
@@ -780,12 +775,12 @@
       return;
     }
     const b = e.target.closest('button[data-cancel]'); if (!b) return;
-    if (!confirm('주문번호 ' + b.dataset.cancel + ' 주문을 취소할까요?\n취소하면 되돌릴 수 없어요.')) return;
+    if (!confirm('주문번호 ' + b.dataset.cancel + ' 주문을 취소할까요?\n취소하면 주문 정보가 바로 지워지고 되돌릴 수 없어요.')) return;
     b.disabled = true; b.textContent = '취소하는 중…';
     api({ action:'cancel', orderId: b.dataset.cancel, name: $('lkName').value.trim(), phone: $('lkPhone').value.trim() })
       .then(d => {
         if (!d.ok) throw new Error(d.error);
-        alert('주문이 취소됐어요.'); lookup();
+        alert('주문이 취소됐어요. 주문 정보도 지워졌어요.'); lookup();
       })
       .catch(err => { alert(err && err.message && !/fetch|JSON/i.test(err.message) ? err.message : '취소하지 못했어요. 농장으로 연락 주세요.'); b.disabled = false; b.textContent = '주문 취소하기'; });
   });

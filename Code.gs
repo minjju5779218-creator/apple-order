@@ -498,13 +498,12 @@ function cancelOrder(d) {
     if (!t || s.cancelHours <= 0 || Date.now() > t.getTime() + s.cancelHours * 3600 * 1000)
       return json({ ok: false, error: '취소 가능 시간(' + s.cancelHours + '시간)이 지났어요.' + call });
 
-    const when = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm');
-    hit.rows.forEach(x => {
-      sh.getRange(x.row, COL['취소일시']).setValue(when);
-      sh.getRange(x.row, 1, 1, ORDER_HEADERS.length).setFontColor('#aaaaaa').setFontLine('line-through');
-    });
-    notify(s, '❌ 주문 취소 ' + id + ' · ' + hit.rows[0].g('주문자'),
-      ['손님이 주문을 취소했어요.', '주문번호: ' + id].concat(hit.rows.map(x => '- ' + x.g('받는 분') + ': ' + x.g('주문 내역'))));
+    // 입금 전 손님 취소는 시트에서 바로 지움 (손님 정보 없이 주문번호·금액만 기록에 남김)
+    const mailLines = ['손님이 주문을 취소해서 시트에서 지웠어요.', '주문번호: ' + id].concat(hit.rows.map(x => '- ' + x.g('받는 분') + ': ' + x.g('주문 내역')));
+    const buyer = hit.rows[0].g('주문자');
+    logErased([hit], '손님 취소');
+    hit.rows.map(x => x.row).sort((a, b) => b - a).forEach(r => sh.deleteRow(r));
+    notify(s, '❌ 주문 취소 ' + id + ' · ' + buyer, mailLines);
     return json({ ok: true });
   } catch (err) {
     return json({ ok: false, error: '취소 중 문제가 생겼어요.' });
@@ -557,6 +556,20 @@ function makeOrderId(sh, now) {
   return prefix + String(n + 1).padStart(3, '0');
 }
 
+// 지운 주문을 [정보삭제 기록]에 남김 — 이름·연락처·주소 없이 주문번호·금액만 (주문번호가 다시 쓰이지 않게)
+function logErased(groups, reason) {
+  const ss = SpreadsheetApp.getActive();
+  let log = ss.getSheetByName(SHEET_ERASED);
+  if (!log) { log = ss.insertSheet(SHEET_ERASED); log.appendRow(['삭제일시', '주문번호', '주문일시', '상태', '금액', '사유']); log.setFrozenRows(1); }
+  const when = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm');
+  const rows = groups.map(x => {
+    const t = orderTime(x.rows[0].g('주문일시'));
+    return [when, x.id, t ? Utilities.formatDate(t, TZ, 'yyyy-MM-dd HH:mm') : '', statusOfRows(x.rows),
+            x.rows.reduce((a, r) => a + (Number(r.g('상품 금액')) || 0) + (Number(r.g('추가 택배비')) || 0), 0), reason];
+  });
+  log.getRange(log.getLastRow() + 1, 1, rows.length, 6).setValues(rows);
+}
+
 /* ---------- 손님 정보 삭제 요청 (시트에서 실제로 지움) ---------- */
 // 정보 삭제 가능 여부: 취소되지 않은 주문이 모두 입금 확인되고, 그 뒤 정한 일수가 지나야 함
 function eraseCheck(groups, s) {
@@ -593,16 +606,7 @@ function eraseCustomer(d) {
     if (!chk.ok) return json({ ok: false, error: chk.msg + (chk.unpaid ? '\n입금 전이면 먼저 주문을 취소해주세요.' : '') + (s.phone ? '\n문의: ' + s.phone : '') });
 
     // 손님 정보 없이 주문번호·금액만 기록으로 남김
-    const ss = SpreadsheetApp.getActive();
-    let log = ss.getSheetByName(SHEET_ERASED);
-    if (!log) { log = ss.insertSheet(SHEET_ERASED); log.appendRow(['삭제일시', '주문번호', '주문일시', '상태', '금액']); log.setFrozenRows(1); }
-    const when = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm');
-    const logRows = groups.map(x => {
-      const t = orderTime(x.rows[0].g('주문일시'));
-      return [when, x.id, t ? Utilities.formatDate(t, TZ, 'yyyy-MM-dd HH:mm') : '', statusOfRows(x.rows),
-              x.rows.reduce((a, r) => a + (Number(r.g('상품 금액')) || 0) + (Number(r.g('추가 택배비')) || 0), 0)];
-    });
-    log.getRange(log.getLastRow() + 1, 1, logRows.length, 5).setValues(logRows);
+    logErased(groups, '정보 삭제 요청');
 
     // 아래 줄부터 지워야 줄 번호가 안 꼬임
     const rows = [];
