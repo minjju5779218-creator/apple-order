@@ -15,6 +15,7 @@
 const SHEET_ORDERS = '주문';
 const SHEET_PRICES = '가격표';
 const SHEET_SETTINGS = '설정';
+const SHEET_ERASED = '정보삭제 기록';   // 손님 정보 없이 주문번호·금액만 남김
 const TZ = 'Asia/Seoul';
 const MAX_DEST = 20;
 
@@ -42,6 +43,7 @@ const DEFAULT_PRICES = [
 ];
 
 const OLD_GUIDES = [
+  '· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러 배송지를 추가하세요.\n· 주문 후 2시간 안에는 [내 주문 확인]에서 직접 취소할 수 있어요.\n· 입금 확인된 주문은 주문일로부터 2주가 지나면 [내 주문 확인]에서 내역을 직접 지울 수 있어요.\n· 주문 내역은 주문일로부터 1달이 지나면 [내 주문 확인]에서 자동으로 사라져요.',
   '· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러 배송지를 추가하세요.\n· 주문 후 2시간 안에는 [내 주문 확인]에서 직접 취소할 수 있어요.\n· 받으신 사과에 문제가 있으면 사진과 함께 문자 주세요.'
 ];
 
@@ -50,7 +52,7 @@ const DEFAULT_SETTINGS = [
   ['입금 계좌', '○○은행 000-0000-0000 (예금주 ○○○)', '주문 완료 화면에 나옵니다'],
   ['문의 전화', '010-0000-0000', ''],
   ['공지', '기본 택배비 무료 · 입금 확인 후 순서대로 발송', '주문서 맨 위 빨간 띠에 나옵니다 (비워도 됨)'],
-  ['안내사항', '· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러 배송지를 추가하세요.\n· 주문 후 2시간 안에는 [내 주문 확인]에서 직접 취소할 수 있어요.\n· 입금 확인된 주문은 주문일로부터 2주가 지나면 [내 주문 확인]에서 내역을 직접 지울 수 있어요.\n· 주문 내역은 주문일로부터 1달이 지나면 [내 주문 확인]에서 자동으로 사라져요.', '주문서의 안내사항 상자에 나옵니다. 칸 안에서 줄바꿈은 Ctrl+Enter (비워도 됨)'],
+  ['안내사항', '· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러 배송지를 추가하세요.\n· 주문 후 2시간 안에는 [내 주문 확인]에서 직접 취소할 수 있어요.\n· 입금 확인된 주문은 주문일로부터 2주가 지나면 [내 주문 확인]에서 내역을 직접 지울 수 있어요.\n· 주문 내역은 주문일로부터 1달이 지나면 [내 주문 확인]에서 자동으로 사라져요.\n· 주문 정보를 완전히 없애고 싶으시면 [내 주문 확인] 맨 아래 [정보 삭제 요청]을 눌러주세요. 농장에 남은 기록까지 바로 지워져요.', '주문서의 안내사항 상자에 나옵니다. 칸 안에서 줄바꿈은 Ctrl+Enter (비워도 됨)'],
   ['주문 받기', '켜기', '켜기 / 끄기 — 끄면 주문서가 닫힙니다'],
   ['기본 보내는 분', '', '송장에 찍힐 보내는 분 이름. 비우면 농장 이름'],
   ['기본 보내는 분 연락처', '', '송장에 찍힐 보내는 분 연락처. 비우면 문의 전화'],
@@ -218,6 +220,7 @@ function doPost(e) {
   if (d.action === 'lookup') return lookupOrders(d);
   if (d.action === 'cancel') return cancelOrder(d);
   if (d.action === 'hide') return hideOrder(d);
+  if (d.action === 'erase') return eraseCustomer(d);
   return placeOrder(d);
 }
 
@@ -461,13 +464,61 @@ function hideOrder(d) {
 function makeOrderId(sh, now) {
   const prefix = Utilities.formatDate(now, TZ, 'yyMMdd') + '-';
   let n = 0;
-  if (sh.getLastRow() > 1) {
-    sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().forEach(r => {
+  const scan = (s, col) => {
+    if (s && s.getLastRow() > 1) s.getRange(2, col, s.getLastRow() - 1, 1).getValues().forEach(r => {
       const v = String(r[0]);
       if (v.indexOf(prefix) === 0) n = Math.max(n, Number(v.slice(prefix.length)) || 0);
     });
-  }
+  };
+  scan(sh, 1);
+  scan(SpreadsheetApp.getActive().getSheetByName(SHEET_ERASED), 2);   // 지워진 주문번호도 다시 쓰지 않게
   return prefix + String(n + 1).padStart(3, '0');
+}
+
+/* ---------- 손님 정보 삭제 요청 (시트에서 실제로 지움) ---------- */
+function eraseCustomer(d) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    const name = str(d.name, 30).replace(/\s/g, ''), phone = digits(d.phone);
+    if (!name || !mobileOk(phone)) return json({ ok: false, error: '이름과 휴대폰 번호를 확인해주세요.' });
+    const s = readSettings();
+    const { sh, groups } = findOrders(name, phone);
+    if (!groups.length) return json({ ok: false, error: '이 이름과 번호로 된 주문 정보가 없어요.' });
+
+    // 아직 보내지 않은 주문이 있으면 막음 (지우면 사과를 못 보내니까)
+    const open = groups.filter(x => { const st = statusOfRows(x.rows); return st === '입금 확인 중' || st === '입금 확인 완료'; });
+    if (open.length) {
+      return json({ ok: false, error: '아직 발송 전인 주문이 있어서 지금은 삭제할 수 없어요.\n(' + open.map(x => x.id).join(', ') + ')\n' +
+        '입금 전이면 먼저 주문을 취소하시고, 입금하셨으면 발송된 뒤에 다시 요청해주세요.' + (s.phone ? '\n문의: ' + s.phone : '') });
+    }
+
+    // 손님 정보 없이 주문번호·금액만 기록으로 남김
+    const ss = SpreadsheetApp.getActive();
+    let log = ss.getSheetByName(SHEET_ERASED);
+    if (!log) { log = ss.insertSheet(SHEET_ERASED); log.appendRow(['삭제일시', '주문번호', '주문일시', '상태', '금액']); log.setFrozenRows(1); }
+    const when = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm');
+    const logRows = groups.map(x => {
+      const t = orderTime(x.rows[0].g('주문일시'));
+      return [when, x.id, t ? Utilities.formatDate(t, TZ, 'yyyy-MM-dd HH:mm') : '', statusOfRows(x.rows),
+              x.rows.reduce((a, r) => a + (Number(r.g('상품 금액')) || 0) + (Number(r.g('추가 택배비')) || 0), 0)];
+    });
+    log.getRange(log.getLastRow() + 1, 1, logRows.length, 5).setValues(logRows);
+
+    // 아래 줄부터 지워야 줄 번호가 안 꼬임
+    const rows = [];
+    groups.forEach(x => x.rows.forEach(r => rows.push(r.row)));
+    rows.sort((a, b) => b - a).forEach(r => sh.deleteRow(r));
+
+    notify(s, '🧹 손님 정보 삭제 요청 처리됨 · 주문 ' + groups.length + '건',
+      ['손님 요청으로 주문 ' + groups.length + '건(시트 ' + rows.length + '줄)을 지웠어요.', '주문번호: ' + groups.map(x => x.id).join(', '),
+       '[정보삭제 기록] 시트에 주문번호와 금액만 남아 있어요.']);
+    return json({ ok: true, count: groups.length });
+  } catch (err) {
+    return json({ ok: false, error: '삭제 중 문제가 생겼어요.' });
+  } finally {
+    try { lock.releaseLock(); } catch (x) {}
+  }
 }
 
 function notify(s, subject, lines) {

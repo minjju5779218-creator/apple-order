@@ -182,6 +182,13 @@
       <button type="button" class="btn btn-dark" id="lkBtn" style="margin-top:14px">주문 조회하기</button>
     </section>
     <div id="lkResult"></div>
+    <section id="eraseBox" hidden style="border-color:#f0c9c6">
+      <h2 style="font-size:17px">정보 삭제 요청</h2>
+      <p style="font-size:15px;margin:0 0 8px">주문하실 때 남긴 이름, 연락처, 주소 같은 정보를 농장 기록에서도 <b>완전히 지워요.</b></p>
+      <div class="warn" style="font-size:14px;margin-bottom:12px">⚠️ 삭제하면 위 이름·번호로 된 <b>모든 주문 내역이 바로 없어지고 되돌릴 수 없어요.</b><br>
+      아직 발송 전인 주문이 있으면 삭제할 수 없어요. (입금 전이면 먼저 취소해주세요)</div>
+      <button type="button" class="btn btn-line" id="eraseBtn" style="color:var(--red-d);border-color:#e5a9a5">정보 삭제 요청</button>
+    </section>
   </div>
 
   <footer id="contact"></footer>
@@ -269,6 +276,7 @@
       if (!body) return Promise.resolve(demoData());
       if (body.action === 'lookup') return Promise.resolve({ ok:true, orders:[] });
       if (body.action === 'cancel' || body.action === 'hide') return Promise.resolve({ ok:true });
+      if (body.action === 'erase') return Promise.resolve({ ok:true, count:0 });
       return Promise.resolve({ ok:true, orderId:'미리보기-001', total: calc().total, cancelHours:2 });
     }
     return fetch(SCRIPT_URL, body ? { method:'POST', body: JSON.stringify(body) } : undefined).then(r => r.json());
@@ -637,11 +645,31 @@
         if (!d.ok) throw new Error(d.error);
         store.set({ name, phone });
         renderOrders(d);
+        $('eraseBox').hidden = false;
       })
       .catch(err => { $('lkResult').innerHTML = `<div class="empty-msg">${esc(err && err.message && !/fetch|JSON/i.test(err.message) ? err.message : '조회하지 못했어요. 잠시 후 다시 해주세요.')}</div>`; })
       .finally(() => { btn.disabled = false; btn.textContent = '주문 조회하기'; });
   }
   $('lkBtn').addEventListener('click', lookup);
+  ['lkName','lkPhone'].forEach(id => $(id).addEventListener('input', () => { $('eraseBox').hidden = true; }));
+
+  $('eraseBtn').addEventListener('click', () => {
+    const name = $('lkName').value.trim(), phone = $('lkPhone').value.trim();
+    if (!name || !mobileOk(phone)) { $('e-lk').classList.add('show'); return; }
+    if (!confirm(name + ' (' + phone + ') 님의 정보를 삭제할까요?\n\n모든 주문 내역이 바로 없어지고 되돌릴 수 없어요.')) return;
+    if (!confirm('정말 삭제할까요? 한 번 더 확인해주세요.')) return;
+    const b = $('eraseBtn'); b.disabled = true; b.textContent = '삭제하는 중…';
+    api({ action:'erase', name, phone })
+      .then(d => {
+        if (!d.ok) throw new Error(d.error);
+        try { localStorage.removeItem('appleOrderMe'); } catch(e){}
+        $('lkName').value = ''; $('lkPhone').value = '';
+        $('eraseBox').hidden = true;
+        $('lkResult').innerHTML = '<div class="empty-msg">정보가 삭제됐어요.<br>주문 ' + d.count + '건의 내역이 모두 지워졌어요.</div>';
+      })
+      .catch(err => alert(err && err.message && !/fetch|JSON/i.test(err.message) ? err.message : '삭제하지 못했어요. 잠시 후 다시 해주세요.'))
+      .finally(() => { b.disabled = false; b.textContent = '정보 삭제 요청'; });
+  });
 
   function renderOrders(d){
     if (!d.orders.length) { $('lkResult').innerHTML = '<div class="empty-msg">이 이름과 번호로 된 주문이 없어요.<br>주문하실 때 적은 주문자 정보로 다시 확인해주세요.</div>'; return; }
