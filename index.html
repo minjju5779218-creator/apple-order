@@ -12,18 +12,23 @@
 <style>
   :root{
     --red:#c8322b; --red-d:#a3241e; --red-l:#fdeceb;
-    --green:#3f8f3a; --ink:#222; --sub:#666; --line:#e4e0dc; --bg:#faf7f4;
+    --green:#2f7d32; --green-l:#e7f4e8; --ink:#222; --sub:#666; --line:#e4e0dc; --bg:#faf7f4;
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
        background:var(--bg);color:var(--ink);font-size:17px;line-height:1.5;padding-bottom:110px}
-  header{background:var(--red);color:#fff;padding:22px 18px 18px;text-align:center}
+  header{background:var(--red);color:#fff;padding:20px 18px 0;text-align:center}
   header h1{margin:0;font-size:24px}
   header p{margin:6px 0 0;font-size:15px;opacity:.95;white-space:pre-line}
+  .tabs{display:flex;max-width:560px;margin:14px auto 0}
+  .tabs button{flex:1;border:0;background:transparent;color:#fff;opacity:.75;font-size:17px;font-weight:700;padding:12px 0;border-bottom:4px solid transparent;cursor:pointer;font-family:inherit}
+  .tabs button.on{opacity:1;border-bottom-color:#fff}
   main{max-width:560px;margin:0 auto;padding:14px}
   section{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 16px;margin-bottom:14px}
   h2{font-size:19px;margin:0 0 12px}
   h2 small{font-weight:400;color:var(--sub);font-size:14px}
+  .guide{background:#fffaf0;border:1px solid #f0dfb8;border-radius:14px;padding:14px 16px;margin-bottom:14px;font-size:15px;white-space:pre-line}
+  .guide b{display:block;margin-bottom:4px;font-size:16px}
   .group{margin-bottom:16px}
   .group:last-child{margin-bottom:0}
   .group h3{font-size:16px;margin:0 0 6px;padding:6px 10px;border-radius:8px;background:var(--red-l);color:var(--red-d)}
@@ -39,10 +44,9 @@
   .step span{width:34px;text-align:center;font-weight:700}
   .tag{font-size:13px;color:#fff;background:#999;border-radius:6px;padding:3px 8px}
   label.f{display:block;font-size:15px;color:var(--sub);margin:12px 0 5px}
-  label.f:first-of-type{margin-top:0}
   input[type=text],input[type=tel],textarea{width:100%;font-size:17px;padding:12px;border:1px solid #cfc9c3;border-radius:10px;background:#fff;font-family:inherit}
   input[readonly]{background:#f6f4f2;color:#333}
-  textarea{min-height:64px;resize:vertical}
+  textarea{min-height:56px;resize:vertical}
   input:focus,textarea:focus{outline:2px solid var(--red);border-color:transparent}
   .row{display:flex;gap:8px}
   .row>*{flex:1}
@@ -50,16 +54,26 @@
   .btn-red{background:var(--red);color:#fff}
   .btn-red:disabled{background:#d9a6a3}
   .btn-line{background:#fff;color:var(--ink);border:1px solid #cfc9c3}
-  .btn-addr{background:var(--ink);color:#fff;margin-bottom:8px}
-  .chk{display:flex;align-items:center;gap:8px;font-size:16px;margin-bottom:6px;cursor:pointer}
-  .chk input{width:22px;height:22px;accent-color:var(--red)}
+  .btn-dark{background:var(--ink);color:#fff}
+  .btn-add{background:#fff;color:var(--red-d);border:2px dashed #e5a9a5;margin-bottom:14px}
+  .btn-sm{display:inline-block;width:auto;padding:8px 14px;font-size:15px;border-radius:10px}
+  .chk,.radio{display:flex;align-items:center;gap:8px;font-size:16px;margin:4px 0 8px;cursor:pointer}
+  .chk input,.radio input{width:22px;height:22px;accent-color:var(--red);flex:none}
   .err{color:var(--red);font-size:14px;margin-top:5px;display:none}
   .err.show{display:block}
   .bad{border-color:var(--red)!important}
   .hint{font-size:14px;color:var(--sub);margin-top:6px}
-  .warn{font-size:14px;color:#8a5a00;background:#fff6dd;border-radius:8px;padding:8px 10px;margin-top:8px;display:none}
+  .warn{font-size:14px;color:#8a5a00;background:#fff6dd;border-radius:8px;padding:8px 10px;margin-top:8px}
+  .dest{border:2px solid var(--line)}
+  .dest-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .dest-h h2{margin:0}
+  .rm{border:0;background:none;color:var(--sub);font-size:15px;cursor:pointer;text-decoration:underline;font-family:inherit}
+  .picked{background:#f8f6f4;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:16px}
+  .picked .ln{display:flex;justify-content:space-between;gap:8px;padding:2px 0}
+  .picked .empty{color:#999}
+  .picked .sub{border-top:1px solid #e8e3de;margin-top:6px;padding-top:6px;font-weight:700}
   .bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);
-       padding:10px 14px calc(10px + env(safe-area-inset-bottom))}
+       padding:10px 14px calc(10px + env(safe-area-inset-bottom));z-index:20}
   .bar .in{max-width:560px;margin:0 auto;display:flex;align-items:center;gap:12px}
   .bar .sum{flex:1;font-size:14px;color:var(--sub)}
   .bar .sum b{display:block;font-size:21px;color:var(--ink)}
@@ -73,6 +87,8 @@
   table.sum th{text-align:left;color:var(--sub);font-weight:400;padding:7px 0;width:92px;vertical-align:top}
   table.sum td{padding:7px 0;font-weight:600}
   table.sum tr{border-bottom:1px solid #f0ece8}
+  .cdest{background:#f8f6f4;border-radius:10px;padding:10px 12px;margin:8px 0;font-size:15px}
+  .cdest b{font-size:16px}
   .total{font-size:20px;color:var(--red-d)}
   .bank{background:var(--red-l);border-radius:12px;padding:14px;text-align:center;margin:12px 0;font-size:17px}
   .bank b{display:block;font-size:19px;margin-top:4px}
@@ -80,6 +96,20 @@
   #loading{text-align:center;padding:60px 0;color:var(--sub)}
   .closed{text-align:center;padding:40px 10px;font-size:18px}
   footer{text-align:center;font-size:14px;color:var(--sub);padding:10px 0 20px}
+  /* 내 주문 확인 */
+  .ocard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+  .ocard .top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+  .ocard .id{font-weight:700}
+  .ocard .dt{font-size:14px;color:var(--sub)}
+  .badge{font-size:14px;font-weight:700;border-radius:20px;padding:4px 12px;white-space:nowrap}
+  .b-wait{background:#fff1d6;color:#8a5a00}
+  .b-paid{background:var(--green-l);color:var(--green)}
+  .b-ship{background:#e3eefc;color:#1d4f91}
+  .b-cancel{background:#eee;color:#888}
+  .ocard .meta{font-size:15px;color:var(--sub);margin-top:8px}
+  .ocard .meta b{color:var(--ink)}
+  .ocard.cancelled{opacity:.6}
+  .empty-msg{text-align:center;color:var(--sub);padding:30px 0}
 </style>
 </head>
 <body>
@@ -87,74 +117,89 @@
 <header>
   <h1 id="farmName">사과 주문서</h1>
   <p id="notice"></p>
+  <div class="tabs" id="tabs" hidden>
+    <button type="button" class="on" data-v="order">주문하기</button>
+    <button type="button" data-v="lookup">내 주문 확인</button>
+  </div>
 </header>
 
 <main>
   <div id="loading">가격표를 불러오는 중이에요…</div>
 
-  <form id="form" hidden autocomplete="on" novalidate>
+  <!-- ================= 주문하기 ================= -->
+  <div id="orderView" hidden>
+    <div class="guide" id="guide" hidden></div>
+    <div id="closedBox" class="closed" hidden></div>
+
+    <form id="form" autocomplete="on" novalidate>
+      <section>
+        <h2>1. 주문하시는 분</h2>
+        <label class="f" for="buyerName" style="margin-top:0">이름</label>
+        <input type="text" id="buyerName" autocomplete="name" placeholder="예) 김사과">
+        <div class="err" id="e-buyerName">이름을 적어주세요.</div>
+        <label class="f" for="buyerPhone">휴대폰 번호</label>
+        <input type="tel" id="buyerPhone" inputmode="numeric" autocomplete="tel" placeholder="010-0000-0000">
+        <div class="err" id="e-buyerPhone">휴대폰 번호를 정확히 적어주세요.</div>
+      </section>
+
+      <section>
+        <h2>2. 보내는 분 <small>송장에 찍히는 이름이에요</small></h2>
+        <label class="radio"><input type="radio" name="senderMode" value="farm" checked> <span id="farmSenderLabel">농장 이름으로 보내기</span></label>
+        <label class="radio"><input type="radio" name="senderMode" value="custom"> 직접 입력하기</label>
+        <div id="senderBox" hidden>
+          <label class="f" for="senderName">보내는 분 이름</label>
+          <input type="text" id="senderName" placeholder="예) 김사과">
+          <div class="err" id="e-senderName">보내는 분 이름을 적어주세요.</div>
+          <label class="f" for="senderPhone">보내는 분 연락처</label>
+          <input type="tel" id="senderPhone" inputmode="numeric" placeholder="010-0000-0000">
+          <div class="err" id="e-senderPhone">연락처를 정확히 적어주세요.</div>
+        </div>
+      </section>
+
+      <div id="dests"></div>
+      <button type="button" class="btn btn-add" id="addDest">＋ 다른 곳에도 보내기</button>
+
+      <section>
+        <h2 id="payTitle">4. 입금 정보</h2>
+        <label class="f" for="payer" style="margin-top:0">입금자명</label>
+        <input type="text" id="payer" placeholder="통장에 찍힐 이름">
+        <div class="hint">주문자 이름과 다르게 입금하시면 꼭 바꿔주세요.</div>
+        <div class="err" id="e-payer">입금자명을 적어주세요.</div>
+      </section>
+    </form>
+  </div>
+
+  <!-- ================= 내 주문 확인 ================= -->
+  <div id="lookupView" hidden>
     <section>
-      <h2>1. 상품 고르기 <small>개수를 눌러 담아주세요</small></h2>
-      <div id="products"></div>
-      <div class="err" id="e-items">상품을 하나 이상 골라주세요.</div>
+      <h2>내 주문 확인</h2>
+      <p class="hint" style="margin-top:0">주문하실 때 적은 <b>주문자 이름</b>과 <b>휴대폰 번호</b>를 넣어주세요.</p>
+      <label class="f" for="lkName">이름</label>
+      <input type="text" id="lkName" placeholder="예) 김사과">
+      <label class="f" for="lkPhone">휴대폰 번호</label>
+      <input type="tel" id="lkPhone" inputmode="numeric" placeholder="010-0000-0000">
+      <div class="err" id="e-lk">이름과 휴대폰 번호를 확인해주세요.</div>
+      <button type="button" class="btn btn-dark" id="lkBtn" style="margin-top:14px">주문 조회하기</button>
     </section>
+    <div id="lkResult"></div>
+  </div>
 
-    <section>
-      <h2>2. 주문하시는 분</h2>
-      <label class="f" for="buyerName">이름</label>
-      <input type="text" id="buyerName" autocomplete="name" placeholder="예) 김사과">
-      <div class="err" id="e-buyerName">이름을 적어주세요.</div>
-      <label class="f" for="buyerPhone">휴대폰 번호</label>
-      <input type="tel" id="buyerPhone" inputmode="numeric" autocomplete="tel" placeholder="010-0000-0000">
-      <div class="err" id="e-buyerPhone">휴대폰 번호를 정확히 적어주세요.</div>
-    </section>
-
-    <section>
-      <h2>3. 받으시는 분</h2>
-      <label class="chk"><input type="checkbox" id="same" checked> 주문하시는 분과 같아요</label>
-      <div id="recvBox" hidden>
-        <label class="f" for="recvName">받는 분 이름</label>
-        <input type="text" id="recvName" placeholder="예) 이과수">
-        <div class="err" id="e-recvName">받는 분 이름을 적어주세요.</div>
-        <label class="f" for="recvPhone">받는 분 휴대폰 번호</label>
-        <input type="tel" id="recvPhone" inputmode="numeric" placeholder="010-0000-0000">
-        <div class="err" id="e-recvPhone">받는 분 휴대폰 번호를 정확히 적어주세요.</div>
-      </div>
-
-      <label class="f">받는 주소</label>
-      <button type="button" class="btn btn-addr" id="addrBtn">🔍 주소 검색하기</button>
-      <div class="row">
-        <input type="text" id="zip" readonly placeholder="우편번호" style="flex:0 0 110px">
-        <input type="text" id="addr" readonly placeholder="주소 검색 버튼을 눌러주세요">
-      </div>
-      <div class="err" id="e-addr">주소 검색 버튼을 눌러 주소를 골라주세요.</div>
-      <label class="f" for="addr2">상세주소 (동·호수 등)</label>
-      <input type="text" id="addr2" placeholder="예) 101동 1203호">
-      <div class="err" id="e-addr2">아파트는 동·호수를 꼭 적어주세요.</div>
-      <div class="hint">옛날 주소(지번)나 아파트 이름으로 검색해도 찾을 수 있어요.</div>
-      <div class="warn" id="islandWarn"></div>
-    </section>
-
-    <section>
-      <h2>4. 입금 · 배송 메모</h2>
-      <label class="f" for="payer">입금자명</label>
-      <input type="text" id="payer" placeholder="통장에 찍힐 이름">
-      <div class="hint">주문자 이름과 다르게 입금하시면 꼭 바꿔주세요.</div>
-      <div class="err" id="e-payer">입금자명을 적어주세요.</div>
-      <label class="f" for="memo">배송 메모 (선택)</label>
-      <textarea id="memo" placeholder="예) 부재 시 문 앞에 놓아주세요"></textarea>
-    </section>
-
-    <footer id="contact"></footer>
-  </form>
-
-  <div id="closedBox" class="closed" hidden></div>
+  <footer id="contact"></footer>
 </main>
 
 <div class="bar" id="bar" hidden>
   <div class="in">
     <div class="sum"><span id="sumBoxes">0박스</span><b id="sumTotal">0원</b></div>
     <button type="button" class="btn btn-red" id="nextBtn">주문하기</button>
+  </div>
+</div>
+
+<!-- 상품 고르기 -->
+<div class="modal" id="prodModal">
+  <div class="sheet">
+    <h2 id="prodTitle">상품 고르기</h2>
+    <div id="products"></div>
+    <button type="button" class="btn btn-red" id="prodDone" style="margin-top:14px">담기</button>
   </div>
 </div>
 
@@ -184,7 +229,10 @@
   <div class="sheet">
     <h2>🍎 주문이 접수됐어요</h2>
     <div id="doneBody"></div>
-    <button type="button" class="btn btn-red" onclick="location.reload()">확인</button>
+    <div class="row">
+      <button type="button" class="btn btn-line" id="doneLookup">내 주문 확인</button>
+      <button type="button" class="btn btn-red" onclick="location.reload()">확인</button>
+    </div>
   </div>
 </div>
 
@@ -193,185 +241,344 @@
   const $ = id => document.getElementById(id);
   const won = n => Number(n).toLocaleString('ko-KR') + '원';
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const store = {
+    get(){ try { return JSON.parse(localStorage.getItem('appleOrderMe') || 'null'); } catch(e){ return null; } },
+    set(v){ try { localStorage.setItem('appleOrderMe', JSON.stringify(v)); } catch(e){} }
+  };
 
   let S = {};          // 설정
   let P = [];          // 상품 [{group,name,price,soldOut}]
-  const qty = {};      // key -> 수량
-  let picked = null;   // 주소 검색 결과
   const key = p => p.group + '|' + p.name;
+  const findP = k => P.find(p => key(p) === k);
 
-  /* ---------- 불러오기 ---------- */
-  // 웹앱 주소를 아직 안 넣었으면 '미리보기' 모드로 열립니다 (주문은 저장되지 않음)
+  /* ---------- 미리보기 모드 (웹앱 주소가 없을 때) ---------- */
   const DEMO = !/^https:\/\/script\.google\.com\//.test(SCRIPT_URL);
   const demoData = () => {
     const g = (grp, list) => list.map(([n,p]) => ({group:grp, name:n, price:p, soldOut:false}));
     return { ok:true,
       settings:{ farmName:'○○농원', bank:'○○은행 000-0000-0000 (예금주 ○○○)', phone:'010-0000-0000',
-        notice:'[미리보기] 웹앱 주소를 넣기 전이라 주문이 저장되지 않아요', open:true,
-        islandFee:3000, islandFeeMode:'박스당', islandAreas:['제주','울릉군','옹진군'] },
+        notice:'[미리보기] 주문이 저장되지 않아요', guide:'· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러주세요.',
+        open:true, senderName:'○○농원', cancelHours:2, islandFee:3000, islandFeeMode:'박스당', islandAreas:['제주','울릉군','옹진군'] },
       products: [].concat(
         g('사과 10kg', [['20과',130000],['22과',120000],['24과',110000],['26과',100000],['30과',90000],['32과',85000],['36과',75000],['40과',65000],['42과',60000]]),
         g('사과 5kg', [['10과',70000],['11과',65000],['12과',60000],['13과',55000],['15과',50000],['16과',45000],['18과',40000],['20과',35000]]),
         g('사과즙', [['1박스 (50포)',30000],['2박스 (100포)',50000]])) };
   };
-  if (DEMO) window.fetch = (u, o) => Promise.resolve({ json: () =>
-    o && o.method === 'POST' ? { ok:true, orderId:'미리보기-001', total: order._k.total } : demoData() });
+  const api = (body) => {
+    if (DEMO) {
+      if (!body) return Promise.resolve(demoData());
+      if (body.action === 'lookup') return Promise.resolve({ ok:true, orders:[] });
+      if (body.action === 'cancel') return Promise.resolve({ ok:true });
+      return Promise.resolve({ ok:true, orderId:'미리보기-001', total: calc().total, cancelHours:2 });
+    }
+    return fetch(SCRIPT_URL, body ? { method:'POST', body: JSON.stringify(body) } : undefined).then(r => r.json());
+  };
 
-  fetch(SCRIPT_URL)
-    .then(r => r.json())
-    .then(d => {
-      if (!d.ok) throw new Error(d.error || 'load');
-      S = d.settings; P = d.products;
-      if (S.farmName) { $('farmName').textContent = S.farmName + ' 사과 주문서'; document.title = $('farmName').textContent; }
-      $('notice').textContent = S.notice || '';
-      $('contact').innerHTML = S.phone ? '문의 · ' + esc(S.phone) : '';
-      $('loading').hidden = true;
-      if (S.open === false) {
-        $('closedBox').hidden = false;
-        $('closedBox').innerHTML = '지금은 주문을 받지 않아요.' + (S.phone ? '<br><br>문의: ' + esc(S.phone) : '');
-        return;
-      }
-      renderProducts();
-      $('form').hidden = false; $('bar').hidden = false;
-    })
-    .catch(() => {
-      $('loading').innerHTML = '가격표를 불러오지 못했어요.<br>잠시 후 다시 열어주세요.';
+  /* ---------- 불러오기 ---------- */
+  api().then(d => {
+    if (!d.ok) throw new Error(d.error || 'load');
+    S = d.settings; P = d.products;
+    if (S.farmName) { $('farmName').textContent = S.farmName + ' 사과 주문서'; document.title = $('farmName').textContent; }
+    $('notice').textContent = S.notice || '';
+    $('contact').innerHTML = S.phone ? '문의 · ' + esc(S.phone) : '';
+    $('farmSenderLabel').textContent = '농장 이름으로 보내기' + (S.senderName ? ' (' + S.senderName + ')' : '');
+    if (S.guide) { $('guide').hidden = false; $('guide').innerHTML = '<b>📌 안내사항</b>' + esc(S.guide); }
+    $('loading').hidden = true;
+    $('tabs').hidden = false;
+    $('orderView').hidden = false;
+    const me = store.get(); if (me) { $('lkName').value = me.name || ''; $('lkPhone').value = me.phone || ''; }
+    if (S.open === false) {
+      $('form').hidden = true; $('addDest').hidden = true;
+      $('closedBox').hidden = false;
+      $('closedBox').innerHTML = '지금은 주문을 받지 않아요.<br><br>주문하신 내역은 위쪽 <b>[내 주문 확인]</b>에서 볼 수 있어요.';
+      return;
+    }
+    addDest();
+    $('bar').hidden = false;
+  }).catch(() => {
+    $('loading').innerHTML = '가격표를 불러오지 못했어요.<br>잠시 후 다시 열어주세요.';
+  });
+
+  /* ---------- 탭 ---------- */
+  function showTab(v){
+    document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+    $('orderView').hidden = v !== 'order';
+    $('lookupView').hidden = v !== 'lookup';
+    $('bar').hidden = v !== 'order' || S.open === false;
+    window.scrollTo(0, 0);
+  }
+  $('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) showTab(b.dataset.v); });
+
+  /* ---------- 입력 도우미 ---------- */
+  function fmtPhone(v){
+    const d = String(v).replace(/\D/g,'').slice(0,11);
+    if (d.length < 4) return d;
+    if (d.startsWith('02')) { // 서울 집 전화
+      if (d.length < 6) return d.slice(0,2)+'-'+d.slice(2);
+      if (d.length < 10) return d.slice(0,2)+'-'+d.slice(2,5)+'-'+d.slice(5);
+      return d.slice(0,2)+'-'+d.slice(2,6)+'-'+d.slice(6,10);
+    }
+    if (d.length < 8) return d.slice(0,3)+'-'+d.slice(3);
+    if (d.length === 10) return d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6);
+    return d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7);
+  }
+  const mobileOk = v => /^01[016789]\d{7,8}$/.test(String(v).replace(/\D/g,''));
+  const anyPhoneOk = v => /^0\d{8,10}$/.test(String(v).replace(/\D/g,''));
+  document.addEventListener('input', e => {
+    const el = e.target;
+    if (el.type === 'tel') el.value = fmtPhone(el.value);
+    el.classList.remove('bad');
+    const er = el.id ? $('e-'+el.id) : el.parentElement.querySelector('.err[data-for="'+el.dataset.f+'"]');
+    if (er) er.classList.remove('show');
+  });
+  let payerTouched = false, senderTouched = false;
+  $('payer').addEventListener('input', () => payerTouched = true);
+  ['senderName','senderPhone'].forEach(id => $(id).addEventListener('input', () => senderTouched = true));
+  $('buyerName').addEventListener('input', e => {
+    if (!payerTouched) $('payer').value = e.target.value;
+    if (!senderTouched) $('senderName').value = e.target.value;
+    syncSame();
+  });
+  $('buyerPhone').addEventListener('input', e => { if (!senderTouched) $('senderPhone').value = e.target.value; syncSame(); });
+  document.querySelectorAll('input[name=senderMode]').forEach(r => r.addEventListener('change', () => {
+    $('senderBox').hidden = document.querySelector('input[name=senderMode]:checked').value !== 'custom';
+  }));
+
+  /* ---------- 배송지 ---------- */
+  const D = [];   // [{el, qty:{}, picked:null}]
+  function addDest(){
+    if (D.length >= 20) { alert('배송지는 20곳까지 넣을 수 있어요.'); return; }
+    const d = { qty:{}, picked:null };
+    const el = document.createElement('section');
+    el.className = 'dest';
+    el.innerHTML = `
+      <div class="dest-h"><h2 class="dt"></h2><button type="button" class="rm" hidden>삭제</button></div>
+      <label class="chk same" hidden><input type="checkbox" class="sameChk"> 주문하시는 분이 직접 받아요</label>
+      <div class="recv">
+        <label class="f" style="margin-top:0">받는 분 이름</label>
+        <input type="text" data-f="recvName" placeholder="예) 이과수">
+        <div class="err" data-for="recvName">받는 분 이름을 적어주세요.</div>
+        <label class="f">받는 분 휴대폰 번호</label>
+        <input type="tel" data-f="recvPhone" inputmode="numeric" placeholder="010-0000-0000">
+        <div class="err" data-for="recvPhone">받는 분 휴대폰 번호를 정확히 적어주세요.</div>
+      </div>
+      <label class="f">받는 주소</label>
+      <button type="button" class="btn btn-dark addrBtn" style="margin-bottom:8px">🔍 주소 검색하기</button>
+      <div class="row">
+        <input type="text" data-f="zip" readonly placeholder="우편번호" style="flex:0 0 110px">
+        <input type="text" data-f="addr" readonly placeholder="주소 검색 버튼을 눌러주세요">
+      </div>
+      <div class="err" data-for="addr">주소 검색 버튼을 눌러 주소를 골라주세요.</div>
+      <label class="f">상세주소 (동·호수 등)</label>
+      <input type="text" data-f="addr2" placeholder="예) 101동 1203호">
+      <div class="err" data-for="addr2">아파트는 동·호수를 꼭 적어주세요.</div>
+      <div class="warn island" hidden></div>
+      <label class="f">보낼 상품</label>
+      <div class="picked"></div>
+      <button type="button" class="btn btn-line pickBtn">🍎 상품 고르기</button>
+      <div class="err" data-for="items">상품을 하나 이상 골라주세요.</div>
+      <label class="f">배송 메모 (선택)</label>
+      <textarea data-f="memo" placeholder="예) 부재 시 문 앞에 놓아주세요"></textarea>`;
+    d.el = el;
+    D.push(d);
+    $('dests').appendChild(el);
+    el.querySelector('.rm').addEventListener('click', () => {
+      if (!confirm('이 배송지를 지울까요?')) return;
+      D.splice(D.indexOf(d), 1); el.remove(); renumber(); updateSum();
     });
+    el.querySelector('.sameChk').addEventListener('change', () => syncSame());
+    el.querySelector('.addrBtn').addEventListener('click', () => openPost(d));
+    el.querySelector('.pickBtn').addEventListener('click', () => openProducts(d));
+    if (D.length === 1) el.querySelector('.sameChk').checked = true;
+    renumber(); renderPicked(d); syncSame(); updateSum();
+    if (D.length > 1) el.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+  $('addDest').addEventListener('click', addDest);
+  const F = (d, f) => d.el.querySelector('[data-f="'+f+'"]');
 
-  /* ---------- 상품 ---------- */
-  function renderProducts(){
+  function renumber(){
+    const multi = D.length > 1;
+    D.forEach((d, i) => {
+      d.el.querySelector('.dt').textContent = multi ? `3. 배송지 ${i+1}` : '3. 받으시는 분';
+      d.el.querySelector('.rm').hidden = !multi;
+      d.el.querySelector('.same').hidden = i !== 0;
+      if (i !== 0) d.el.querySelector('.sameChk').checked = false;
+    });
+    $('addDest').textContent = multi ? '＋ 배송지 하나 더 추가' : '＋ 다른 곳에도 보내기';
+    syncSame();
+  }
+  function syncSame(){
+    D.forEach((d, i) => {
+      const same = i === 0 && d.el.querySelector('.sameChk').checked;
+      d.el.querySelector('.recv').hidden = same;
+      if (same) { F(d,'recvName').value = $('buyerName').value; F(d,'recvPhone').value = $('buyerPhone').value; }
+    });
+  }
+
+  /* ---------- 상품 고르기 (배송지별) ---------- */
+  let cur = null;   // 지금 상품을 고르는 배송지
+  function openProducts(d){
+    cur = d;
+    $('prodTitle').textContent = D.length > 1 ? `배송지 ${D.indexOf(d)+1} · 상품 고르기` : '상품 고르기';
     const groups = [];
     P.forEach(p => { let g = groups.find(x => x.name === p.group); if(!g){ g={name:p.group,items:[]}; groups.push(g);} g.items.push(p); });
     $('products').innerHTML = groups.map(g => `
       <div class="group"><h3>${esc(g.name)}</h3>
         ${g.items.map(p => {
-          const k = esc(key(p));
-          return `<div class="item ${p.soldOut?'soldout':''}" data-k="${k}">
+          const k = key(p), q = d.qty[k] || 0;
+          return `<div class="item ${p.soldOut?'soldout':''} ${q?'on':''}" data-k="${esc(k)}">
             <div class="nm">${esc(p.name)}</div>
             <div class="pr">${won(p.price)}</div>
             ${p.soldOut ? '<span class="tag">품절</span>' :
-              `<div class="step"><button type="button" data-d="-1" aria-label="빼기">−</button><span>0</span><button type="button" data-d="1" aria-label="더하기">+</button></div>`}
+              `<div class="step"><button type="button" data-d="-1" aria-label="빼기">−</button><span>${q}</span><button type="button" data-d="1" aria-label="더하기">+</button></div>`}
           </div>`;}).join('')}
       </div>`).join('');
-    $('products').addEventListener('click', e => {
-      const b = e.target.closest('button[data-d]'); if(!b) return;
-      const row = b.closest('.item'); const k = row.dataset.k;
-      qty[k] = Math.max(0, Math.min(50, (qty[k]||0) + Number(b.dataset.d)));
-      row.querySelector('.step span').textContent = qty[k];
-      row.classList.toggle('on', qty[k] > 0);
-      $('e-items').classList.remove('show');
-      updateSum();
-    });
+    updateProdBtn();
+    $('prodModal').classList.add('show');
+  }
+  $('products').addEventListener('click', e => {
+    const b = e.target.closest('button[data-d]'); if(!b || !cur) return;
+    const row = b.closest('.item'); const k = row.dataset.k;
+    cur.qty[k] = Math.max(0, Math.min(50, (cur.qty[k]||0) + Number(b.dataset.d)));
+    if (!cur.qty[k]) delete cur.qty[k];
+    row.querySelector('.step span').textContent = cur.qty[k] || 0;
+    row.classList.toggle('on', !!cur.qty[k]);
+    updateProdBtn();
+  });
+  function updateProdBtn(){
+    const c = destCalc(cur);
+    $('prodDone').textContent = c.boxes ? `담기 · ${c.boxes}박스 ${won(c.sub)}` : '닫기';
+  }
+  $('prodDone').addEventListener('click', () => {
+    closeModal('prodModal');
+    renderPicked(cur);
+    if (destCalc(cur).boxes) cur.el.querySelector('.err[data-for="items"]').classList.remove('show');
+    updateSum();
+  });
+
+  function renderPicked(d){
+    const c = destCalc(d);
+    const box = d.el.querySelector('.picked');
+    if (!c.items.length) { box.innerHTML = '<div class="empty">아직 고른 상품이 없어요</div>'; }
+    else box.innerHTML = c.items.map(i => `<div class="ln"><span>${esc(i.group+' '+i.name)} × ${i.qty}</span><span>${won(i.qty*i.price)}</span></div>`).join('') +
+      (c.fee ? `<div class="ln"><span>추가 택배비</span><span>${won(c.fee)}</span></div>` : '') +
+      `<div class="ln sub"><span>이 배송지 합계</span><span>${won(c.sub + c.fee)}</span></div>`;
+    d.el.querySelector('.pickBtn').textContent = c.items.length ? '🍎 상품 바꾸기' : '🍎 상품 고르기';
   }
 
-  function cart(){
-    return P.filter(p => !p.soldOut && qty[key(p)] > 0).map(p => ({group:p.group, name:p.name, price:p.price, qty:qty[key(p)]}));
+  /* ---------- 금액 ---------- */
+  function isIsland(d){
+    return !!d.picked && (S.islandAreas || []).some(a => a && d.picked.addr.includes(a));
   }
-  function isIsland(){
-    if (!picked) return false;
-    const full = picked.addr;
-    return (S.islandAreas || []).some(a => a && full.includes(a));
+  function destCalc(d){
+    const items = Object.keys(d.qty).map(k => { const p = findP(k); return p && !p.soldOut ? {group:p.group, name:p.name, price:p.price, qty:d.qty[k]} : null; }).filter(Boolean);
+    const boxes = items.reduce((s,i)=>s+i.qty,0);
+    const sub = items.reduce((s,i)=>s+i.qty*i.price,0);
+    let fee = 0;
+    if (isIsland(d) && boxes > 0) fee = S.islandFeeMode === '주문당' ? S.islandFee : S.islandFee * boxes;
+    return {items, boxes, sub, fee};
   }
   function calc(){
-    const c = cart();
-    const boxes = c.reduce((s,i)=>s+i.qty,0);
-    const sub = c.reduce((s,i)=>s+i.qty*i.price,0);
-    let fee = 0;
-    if (isIsland() && boxes > 0) fee = S.islandFeeMode === '주문당' ? S.islandFee : S.islandFee * boxes;
-    return {c, boxes, sub, fee, total: sub + fee};
+    const per = D.map(destCalc);
+    const boxes = per.reduce((s,c)=>s+c.boxes,0);
+    const total = per.reduce((s,c)=>s+c.sub+c.fee,0);
+    return {per, boxes, total};
   }
   function updateSum(){
     const k = calc();
-    $('sumBoxes').textContent = k.boxes + '박스' + (k.fee ? ' (추가 택배비 포함)' : '');
+    $('sumBoxes').textContent = (D.length > 1 ? D.length + '곳 · ' : '') + k.boxes + '박스';
     $('sumTotal').textContent = won(k.total);
   }
 
-  /* ---------- 입력 ---------- */
-  function fmtPhone(v){
-    const d = v.replace(/\D/g,'').slice(0,11);
-    if (d.length < 4) return d;
-    if (d.length < 8) return d.slice(0,3)+'-'+d.slice(3);
-    if (d.length === 10) return d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6);
-    return d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7);
-  }
-  ['buyerPhone','recvPhone'].forEach(id => $(id).addEventListener('input', e => { e.target.value = fmtPhone(e.target.value); }));
-  $('same').addEventListener('change', e => { $('recvBox').hidden = e.target.checked; });
-  let payerTouched = false;
-  $('payer').addEventListener('input', () => payerTouched = true);
-  $('buyerName').addEventListener('input', e => { if(!payerTouched) $('payer').value = e.target.value; });
-  document.querySelectorAll('input,textarea').forEach(el => el.addEventListener('input', () => {
-    el.classList.remove('bad'); const er = $('e-'+el.id); if (er) er.classList.remove('show');
-  }));
-
   /* ---------- 주소 검색 (카카오 우편번호) ---------- */
-  $('addrBtn').addEventListener('click', () => {
+  function openPost(d){
     $('postWrap').innerHTML = '';
     $('postModal').classList.add('show');
     new daum.Postcode({
       width:'100%', height:'100%',
-      oncomplete: function(d){
+      oncomplete: function(r){
         let extra = '';
-        if (d.bname && /[동로가]$/.test(d.bname)) extra += d.bname;
-        if (d.buildingName && d.apartment === 'Y') extra += (extra ? ', ' : '') + d.buildingName;
-        const road = d.roadAddress || d.autoRoadAddress || d.address;
+        if (r.bname && /[동로가]$/.test(r.bname)) extra += r.bname;
+        if (r.buildingName && r.apartment === 'Y') extra += (extra ? ', ' : '') + r.buildingName;
+        const road = r.roadAddress || r.autoRoadAddress || r.address;
         const addr = road + (extra ? ' (' + extra + ')' : '');
-        picked = { zip: d.zonecode, addr, apt: d.apartment === 'Y', jibun: d.jibunAddress || d.autoJibunAddress || '' };
-        $('zip').value = d.zonecode; $('addr').value = addr;
-        $('addr').classList.remove('bad'); $('e-addr').classList.remove('show');
+        d.picked = { zip: r.zonecode, addr, apt: r.apartment === 'Y' };
+        F(d,'zip').value = r.zonecode; F(d,'addr').value = addr;
+        F(d,'addr').classList.remove('bad'); d.el.querySelector('.err[data-for="addr"]').classList.remove('show');
         closeModal('postModal');
-        const w = $('islandWarn');
-        if (isIsland()) {
-          w.style.display = 'block';
-          w.textContent = '제주·도서산간 지역이라 택배비 ' + won(S.islandFee) + (S.islandFeeMode === '주문당' ? '이' : '(박스당)이') + ' 추가돼요.';
-        } else w.style.display = 'none';
-        updateSum();
-        setTimeout(() => $('addr2').focus(), 200);
+        const w = d.el.querySelector('.island');
+        w.hidden = !isIsland(d);
+        if (isIsland(d)) w.textContent = '제주·도서산간 지역이라 택배비 ' + won(S.islandFee) + (S.islandFeeMode === '주문당' ? '이' : '(박스당)이') + ' 추가돼요.';
+        renderPicked(d); updateSum();
+        setTimeout(() => F(d,'addr2').focus(), 200);
       }
     }).embed($('postWrap'));
-  });
+  }
   window.closeModal = id => $(id).classList.remove('show');
 
   /* ---------- 확인 ---------- */
-  const phoneOk = v => /^01[016789]-?\d{3,4}-?\d{4}$/.test(v);
-  function fail(id, errId){ $(id) && $(id).classList.add('bad'); $(errId||('e-'+id)).classList.add('show'); return false; }
-
   function collect(){
     const v = id => $(id).value.trim();
-    let ok = true, first = null;
-    const mark = (cond, id, errId) => { if(!cond){ ok = fail(id, errId); first = first || $(errId||('e-'+id)); } };
-    const k = calc();
-    if (!k.boxes) { $('e-items').classList.add('show'); ok = false; first = first || $('e-items'); }
-    mark(v('buyerName'), 'buyerName');
-    mark(phoneOk(v('buyerPhone')), 'buyerPhone');
-    const same = $('same').checked;
-    if (!same) { mark(v('recvName'), 'recvName'); mark(phoneOk(v('recvPhone')), 'recvPhone'); }
-    mark(picked, 'addr');
-    if (picked && picked.apt) mark(v('addr2'), 'addr2');
-    mark(v('payer'), 'payer');
-    if (!ok) { first.closest('section').scrollIntoView({behavior:'smooth', block:'start'}); return null; }
+    let first = null;
+    const bad = (el, err) => { if (el) el.classList.add('bad'); err.classList.add('show'); first = first || err; };
+    if (!v('buyerName')) bad($('buyerName'), $('e-buyerName'));
+    if (!mobileOk(v('buyerPhone'))) bad($('buyerPhone'), $('e-buyerPhone'));
+    const senderMode = document.querySelector('input[name=senderMode]:checked').value;
+    if (senderMode === 'custom') {
+      if (!v('senderName')) bad($('senderName'), $('e-senderName'));
+      if (!anyPhoneOk(v('senderPhone'))) bad($('senderPhone'), $('e-senderPhone'));
+    }
+    syncSame();
+    const dests = D.map(d => {
+      const g = f => F(d,f).value.trim();
+      const err = f => d.el.querySelector('.err[data-for="'+f+'"]');
+      const same = d.el.querySelector('.sameChk').checked;
+      if (!same) {
+        if (!g('recvName')) bad(F(d,'recvName'), err('recvName'));
+        if (!mobileOk(g('recvPhone'))) bad(F(d,'recvPhone'), err('recvPhone'));
+      }
+      if (!d.picked) bad(F(d,'addr'), err('addr'));
+      if (d.picked && d.picked.apt && !g('addr2')) bad(F(d,'addr2'), err('addr2'));
+      const c = destCalc(d);
+      if (!c.boxes) bad(null, err('items'));
+      return {
+        recvName: same ? v('buyerName') : g('recvName'),
+        recvPhone: fmtPhone(same ? v('buyerPhone') : g('recvPhone')),
+        zip: d.picked ? d.picked.zip : '', addr: d.picked ? d.picked.addr : '', addr2: g('addr2'), memo: g('memo'),
+        items: c.items.map(i => ({group:i.group, name:i.name, qty:i.qty})),
+        _c: c
+      };
+    });
+    if (!v('payer')) bad($('payer'), $('e-payer'));
+    if (first) { first.closest('section').scrollIntoView({behavior:'smooth', block:'start'}); return null; }
     return {
       buyerName: v('buyerName'), buyerPhone: fmtPhone(v('buyerPhone')),
-      recvName: same ? v('buyerName') : v('recvName'),
-      recvPhone: same ? fmtPhone(v('buyerPhone')) : fmtPhone(v('recvPhone')),
-      zip: picked.zip, addr: picked.addr, addr2: v('addr2'),
-      payer: v('payer'), memo: v('memo'),
-      items: k.c.map(i => ({group:i.group, name:i.name, qty:i.qty})),
-      _k: k
+      senderMode, senderName: v('senderName'), senderPhone: fmtPhone(v('senderPhone')),
+      payer: v('payer'), destinations: dests
     };
   }
 
   let order = null;
   $('nextBtn').addEventListener('click', () => {
     order = collect(); if (!order) return;
-    const k = order._k;
+    const total = calc().total;
+    const multi = order.destinations.length > 1;
     $('confirmBody').innerHTML = `
       <table class="sum">
-        <tr><th>상품</th><td>${k.c.map(i=>esc(i.group+' '+i.name)+' × '+i.qty).join('<br>')}</td></tr>
-        <tr><th>받는 분</th><td>${esc(order.recvName)} · ${esc(order.recvPhone)}</td></tr>
-        <tr><th>주소</th><td>(${esc(order.zip)}) ${esc(order.addr)}<br>${esc(order.addr2) || '<span style="color:#999">상세주소 없음</span>'}</td></tr>
+        <tr><th>주문자</th><td>${esc(order.buyerName)} · ${esc(order.buyerPhone)}</td></tr>
+        <tr><th>보내는 분</th><td>${order.senderMode === 'custom' ? esc(order.senderName) + ' · ' + esc(order.senderPhone) : esc(S.senderName || '농장 이름')}</td></tr>
+      </table>
+      ${order.destinations.map((d, i) => `
+        <div class="cdest">
+          <b>${multi ? '배송지 ' + (i+1) + ' · ' : ''}${esc(d.recvName)} · ${esc(d.recvPhone)}</b><br>
+          (${esc(d.zip)}) ${esc(d.addr)} ${esc(d.addr2) || '<span style="color:#999">상세주소 없음</span>'}<br>
+          ${d._c.items.map(i => esc(i.group+' '+i.name)+' × '+i.qty).join(', ')}
+          ${d._c.fee ? '<br>추가 택배비 ' + won(d._c.fee) : ''}
+          ${d.memo ? '<br><span style="color:#666">메모: ' + esc(d.memo) + '</span>' : ''}
+        </div>`).join('')}
+      <table class="sum">
         <tr><th>입금자명</th><td>${esc(order.payer)}</td></tr>
-        ${k.fee ? `<tr><th>추가 택배비</th><td>${won(k.fee)}</td></tr>` : ''}
-        <tr><th>입금할 금액</th><td class="total">${won(k.total)}</td></tr>
+        <tr><th>입금할 금액</th><td class="total">${won(total)}</td></tr>
       </table>
       <p class="hint center">주소와 연락처가 맞는지 한 번 더 확인해주세요.</p>`;
     $('confirmModal').classList.add('show');
@@ -380,11 +587,15 @@
   /* ---------- 전송 ---------- */
   $('sendBtn').addEventListener('click', () => {
     const b = $('sendBtn'); b.disabled = true; b.textContent = '보내는 중…';
-    const body = Object.assign({}, order); delete body._k;
-    fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify(body) })
-      .then(r => r.json())
+    const body = JSON.parse(JSON.stringify(order));
+    body.destinations.forEach(d => delete d._c);
+    // 배송지가 한 곳이면 옛 형식 칸도 같이 보냄 (구글 스크립트가 1판이어도 주문이 들어가게)
+    if (body.destinations.length === 1) Object.assign(body, body.destinations[0]);
+    api(body)
       .then(d => {
         if (!d.ok) throw new Error(d.error || '주문을 접수하지 못했어요.');
+        store.set({ name: order.buyerName, phone: order.buyerPhone });
+        $('lkName').value = order.buyerName; $('lkPhone').value = order.buyerPhone;
         closeModal('confirmModal');
         $('doneBody').innerHTML = `
           <table class="sum">
@@ -393,7 +604,8 @@
             <tr><th>입금자명</th><td>${esc(order.payer)}</td></tr>
           </table>
           <div class="bank">아래 계좌로 입금해주세요<b>${esc(d.bank || S.bank || '')}</b></div>
-          <p class="hint center">입금이 확인되면 순서대로 보내드려요.<br>이 화면을 캡처해 두시면 편해요.</p>`;
+          <p class="hint center">입금이 확인되면 순서대로 보내드려요.<br>
+          [내 주문 확인]에서 입금 확인 여부를 볼 수 있어요.${d.cancelHours > 0 ? '<br>주문 후 ' + d.cancelHours + '시간 안에는 거기서 취소도 할 수 있어요.' : ''}</p>`;
         $('doneModal').classList.add('show');
       })
       .catch(err => {
@@ -401,6 +613,65 @@
               '\n잠시 후 다시 눌러주시거나' + (S.phone ? ' ' + S.phone + '로' : '') + ' 문자 주세요.');
         b.disabled = false; b.textContent = '이대로 주문';
       });
+  });
+  $('doneLookup').addEventListener('click', () => {
+    closeModal('doneModal');
+    resetForm();
+    showTab('lookup'); lookup();
+  });
+  function resetForm(){
+    D.splice(0).forEach(d => d.el.remove());
+    $('form').reset(); payerTouched = senderTouched = false; $('senderBox').hidden = true;
+    addDest(); $('sendBtn').disabled = false; $('sendBtn').textContent = '이대로 주문';
+  }
+
+  /* ---------- 내 주문 확인 ---------- */
+  const BADGE = { '입금 대기':'b-wait', '입금 확인 완료':'b-paid', '발송 준비 중':'b-ship', '취소됨':'b-cancel' };
+  function lookup(){
+    const name = $('lkName').value.trim(), phone = $('lkPhone').value.trim();
+    if (!name || !mobileOk(phone)) { $('e-lk').classList.add('show'); return; }
+    $('e-lk').classList.remove('show');
+    const btn = $('lkBtn'); btn.disabled = true; btn.textContent = '조회 중…';
+    api({ action:'lookup', name, phone })
+      .then(d => {
+        if (!d.ok) throw new Error(d.error);
+        store.set({ name, phone });
+        renderOrders(d);
+      })
+      .catch(err => { $('lkResult').innerHTML = `<div class="empty-msg">${esc(err && err.message && !/fetch|JSON/i.test(err.message) ? err.message : '조회하지 못했어요. 잠시 후 다시 해주세요.')}</div>`; })
+      .finally(() => { btn.disabled = false; btn.textContent = '주문 조회하기'; });
+  }
+  $('lkBtn').addEventListener('click', lookup);
+
+  function renderOrders(d){
+    if (!d.orders.length) { $('lkResult').innerHTML = '<div class="empty-msg">이 이름과 번호로 된 주문이 없어요.<br>주문하실 때 적은 주문자 정보로 다시 확인해주세요.</div>'; return; }
+    $('lkResult').innerHTML = d.orders.map(o => `
+      <div class="ocard ${o.status === '취소됨' ? 'cancelled' : ''}">
+        <div class="top">
+          <div><div class="id">주문번호 ${esc(o.orderId)}</div><div class="dt">${esc(o.date)}</div></div>
+          <span class="badge ${BADGE[o.status] || 'b-wait'}">${o.status === '입금 확인 완료' ? '✓ ' : ''}${esc(o.status)}</span>
+        </div>
+        ${o.dests.map((x, i) => `<div class="cdest">
+          ${o.dests.length > 1 ? '<b>배송지 ' + (i+1) + '</b> · ' : ''}<b>${esc(x.recv)}</b><br>
+          ${esc(x.addr)}<br>${esc(x.items)}${x.memo ? '<br><span style="color:#666">메모: ' + esc(x.memo) + '</span>' : ''}</div>`).join('')}
+        <div class="meta">보내는 분 <b>${esc(o.sender)}</b> · 입금자명 <b>${esc(o.payer)}</b></div>
+        <div class="meta">${o.status === '취소됨' ? '취소된 주문이에요' : '입금할 금액'} <b class="total">${won(o.total)}</b></div>
+        ${o.status === '입금 대기' ? `<div class="bank" style="font-size:15px">입금 계좌<b style="font-size:17px">${esc(d.bank || '')}</b></div>` : ''}
+        ${o.canCancel ? `<button type="button" class="btn btn-line" data-cancel="${esc(o.orderId)}" style="margin-top:10px">주문 취소하기</button>
+          <p class="hint center">${esc(o.cancelUntil)}까지 취소할 수 있어요</p>` : ''}
+        ${!o.canCancel && o.status !== '취소됨' ? `<p class="hint">취소·변경은 ${esc(d.phone || '농장')}로 연락 주세요.</p>` : ''}
+      </div>`).join('');
+  }
+  $('lkResult').addEventListener('click', e => {
+    const b = e.target.closest('button[data-cancel]'); if (!b) return;
+    if (!confirm('주문번호 ' + b.dataset.cancel + ' 주문을 취소할까요?\n취소하면 되돌릴 수 없어요.')) return;
+    b.disabled = true; b.textContent = '취소하는 중…';
+    api({ action:'cancel', orderId: b.dataset.cancel, name: $('lkName').value.trim(), phone: $('lkPhone').value.trim() })
+      .then(d => {
+        if (!d.ok) throw new Error(d.error);
+        alert('주문이 취소됐어요.'); lookup();
+      })
+      .catch(err => { alert(err && err.message && !/fetch|JSON/i.test(err.message) ? err.message : '취소하지 못했어요. 농장으로 연락 주세요.'); b.disabled = false; b.textContent = '주문 취소하기'; });
   });
 })();
 </script>
