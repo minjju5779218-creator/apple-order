@@ -110,6 +110,9 @@
   .ocard .meta{font-size:15px;color:var(--sub);margin-top:8px}
   .ocard .meta b{color:var(--ink)}
   .ocard.cancelled{opacity:.6}
+  .editbar{display:flex;gap:10px;align-items:center;background:#eef4ff;border:1px solid #c9dcfb;border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:15px}
+  .editbar>div{flex:1}
+  .chg{font-size:12px;color:#1d4f91;background:#e3eefc;border-radius:6px;padding:2px 6px;margin-left:6px;font-weight:700}
   .empty-msg{text-align:center;color:var(--sub);padding:30px 0}
 </style>
 </head>
@@ -129,6 +132,10 @@
 
   <!-- ================= 주문하기 ================= -->
   <div id="orderView" hidden>
+    <div class="editbar" id="editBar" hidden>
+      <div>✏️ <b id="editId"></b> 주문을 변경하고 있어요.<br><span class="hint" style="margin:0">고친 뒤 아래 [변경하기]를 눌러주세요. 주문자 이름·번호는 바꿀 수 없어요.</span></div>
+      <button type="button" class="btn btn-line btn-sm" id="editQuit">그만두기</button>
+    </div>
     <div class="guide" id="guide" hidden></div>
     <div id="closedBox" class="closed" hidden></div>
 
@@ -240,7 +247,7 @@
     <div id="doneBody"></div>
     <div class="row">
       <button type="button" class="btn btn-line" id="doneLookup">내 주문 확인</button>
-      <button type="button" class="btn btn-red" onclick="location.reload()">확인</button>
+      <button type="button" class="btn btn-red" id="doneOk">확인</button>
     </div>
   </div>
 </div>
@@ -279,6 +286,7 @@
       if (body.action === 'lookup') return Promise.resolve({ ok:true, orders:[], erase:{ ok:false, any:false } });
       if (body.action === 'cancel' || body.action === 'hide') return Promise.resolve({ ok:true });
       if (body.action === 'erase') return Promise.resolve({ ok:true, count:0 });
+      if (body.action === 'modify') return Promise.resolve({ ok:true, orderId: body.orderId, total: calc().total, cancelHours:2 });
       return Promise.resolve({ ok:true, orderId:'미리보기-001', total: calc().total, cancelHours:2 });
     }
     return fetch(SCRIPT_URL, body ? { method:'POST', body: JSON.stringify(body) } : undefined).then(r => r.json());
@@ -401,9 +409,11 @@
     el.querySelector('.pickBtn').addEventListener('click', () => openProducts(d));
     if (D.length === 1) el.querySelector('.sameChk').checked = true;
     renumber(); renderPicked(d); syncSame(); updateSum();
-    if (D.length > 1) el.scrollIntoView({behavior:'smooth', block:'start'});
+    if (D.length > 1 && !filling) el.scrollIntoView({behavior:'smooth', block:'start'});
+    return d;
   }
-  $('addDest').addEventListener('click', addDest);
+  $('addDest').addEventListener('click', () => addDest());
+  let filling = false;
   const F = (d, f) => d.el.querySelector('[data-f="'+f+'"]');
 
   function renumber(){
@@ -573,6 +583,8 @@
     order = collect(); if (!order) return;
     const total = calc().total;
     const multi = order.destinations.length > 1;
+    document.querySelector('#confirmModal h2').textContent = editing ? '변경할 내용을 확인해주세요' : '주문 내용을 확인해주세요';
+    $('sendBtn').textContent = editing ? '이대로 변경' : '이대로 주문';
     $('confirmBody').innerHTML = `
       <table class="sum">
         <tr><th>주문자</th><td>${esc(order.buyerName)} · ${esc(order.buyerPhone)}</td></tr>
@@ -601,12 +613,14 @@
     body.destinations.forEach(d => delete d._c);
     // 배송지가 한 곳이면 옛 형식 칸도 같이 보냄 (구글 스크립트가 1판이어도 주문이 들어가게)
     if (body.destinations.length === 1) Object.assign(body, body.destinations[0]);
+    if (editing) { body.action = 'modify'; body.orderId = editing; }
     api(body)
       .then(d => {
         if (!d.ok) throw new Error(d.error || '주문을 접수하지 못했어요.');
         store.set({ name: order.buyerName, phone: order.buyerPhone });
         $('lkName').value = order.buyerName; $('lkPhone').value = order.buyerPhone;
         closeModal('confirmModal');
+        document.querySelector('#doneModal h2').textContent = editing ? '✏️ 주문이 변경됐어요' : '🍎 주문이 접수됐어요';
         $('doneBody').innerHTML = `
           <table class="sum">
             <tr><th>주문번호</th><td>${esc(d.orderId)}</td></tr>
@@ -615,14 +629,19 @@
           </table>
           <div class="bank">아래 계좌로 입금해주세요<b>${esc(d.bank || S.bank || '')}</b></div>
           <p class="hint center">입금이 확인되면 순서대로 보내드려요.<br>
-          [내 주문 확인]에서 입금 확인 여부를 볼 수 있어요.${d.cancelHours > 0 ? '<br>주문 후 ' + d.cancelHours + '시간 안에는 거기서 취소도 할 수 있어요.' : ''}</p>`;
+          [내 주문 확인]에서 입금 확인 여부를 볼 수 있어요.${d.cancelUntil ? '<br>' + esc(d.cancelUntil) + '까지 다시 변경하거나 취소할 수 있어요.' : (d.cancelHours > 0 ? '<br>주문 후 ' + d.cancelHours + '시간 안에는 거기서 변경·취소도 할 수 있어요.' : '')}</p>`;
         $('doneModal').classList.add('show');
       })
       .catch(err => {
         alert((err && err.message && !/fetch|Network|JSON/i.test(err.message) ? err.message : '주문 전송에 실패했어요.') +
               '\n잠시 후 다시 눌러주시거나' + (S.phone ? ' ' + S.phone + '로' : '') + ' 문자 주세요.');
-        b.disabled = false; b.textContent = '이대로 주문';
+        b.disabled = false; b.textContent = editing ? '이대로 변경' : '이대로 주문';
       });
+  });
+  // 확인: 새 주문이면 새로고침, 변경이면 조회 화면으로
+  $('doneOk').addEventListener('click', () => {
+    if (!editing) { location.reload(); return; }
+    closeModal('doneModal'); resetForm(); showTab('lookup'); lookup();
   });
   $('doneLookup').addEventListener('click', () => {
     closeModal('doneModal');
@@ -632,8 +651,55 @@
   function resetForm(){
     D.splice(0).forEach(d => d.el.remove());
     $('form').reset(); payerTouched = senderTouched = false; $('senderBox').hidden = true;
-    addDest(); $('sendBtn').disabled = false; $('sendBtn').textContent = '이대로 주문';
+    setEditing(null);
+    addDest(); updateSum(); $('sendBtn').disabled = false; $('sendBtn').textContent = '이대로 주문';
   }
+
+  /* ---------- 주문 변경 ---------- */
+  let editing = null;   // 변경 중인 주문번호
+  let lastOrders = [];
+  function setEditing(id){
+    editing = id;
+    $('editBar').hidden = !id; $('editId').textContent = id ? '주문번호 ' + id : '';
+    ['buyerName','buyerPhone'].forEach(k => { $(k).readOnly = !!id; });
+    $('nextBtn').textContent = id ? '변경하기' : '주문하기';
+  }
+  function startEdit(o){
+    const e = o.edit; if (!e) return;
+    D.splice(0).forEach(d => d.el.remove());
+    $('form').reset();
+    $('buyerName').value = $('lkName').value.trim(); $('buyerPhone').value = fmtPhone($('lkPhone').value);
+    document.querySelector('input[name=senderMode][value=' + (e.senderMode === 'custom' ? 'custom' : 'farm') + ']').checked = true;
+    $('senderBox').hidden = e.senderMode !== 'custom';
+    $('senderName').value = e.senderName || ''; $('senderPhone').value = e.senderPhone || '';
+    $('payer').value = e.payer || ''; payerTouched = senderTouched = true;
+    const missing = [];
+    filling = true;
+    e.dests.forEach((x, i) => {
+      const d = addDest();
+      const same = i === 0 && x.recvName === $('buyerName').value.trim() && x.recvPhone.replace(/\D/g,'') === $('buyerPhone').value.replace(/\D/g,'');
+      d.el.querySelector('.sameChk').checked = same;
+      F(d,'recvName').value = x.recvName; F(d,'recvPhone').value = x.recvPhone;
+      F(d,'zip').value = x.zip; F(d,'addr').value = x.addr; F(d,'addr2').value = x.addr2; F(d,'memo').value = x.memo;
+      d.picked = { zip: x.zip, addr: x.addr, apt: false };
+      x.items.forEach(it => {
+        const p = P.find(p => p.group === it.group && p.name === it.name);
+        if (p && !p.soldOut) d.qty[key(p)] = it.qty; else missing.push(it.group + ' ' + it.name);
+      });
+      const w = d.el.querySelector('.island'); w.hidden = !isIsland(d);
+      if (isIsland(d)) w.textContent = '제주·도서산간 지역이라 택배비 ' + won(S.islandFee) + (S.islandFeeMode === '주문당' ? '이' : '(박스당)이') + ' 추가돼요.';
+      renderPicked(d);
+    });
+    filling = false;
+    renumber(); syncSame(); updateSum();
+    setEditing(o.orderId);
+    showTab('order');
+    if (missing.length) alert('지금 품절이거나 없어진 상품은 빠졌어요:\n' + missing.join('\n') + '\n다른 상품을 골라주세요.');
+  }
+  $('editQuit').addEventListener('click', () => {
+    if (!confirm('변경을 그만두고 원래 주문을 그대로 둘까요?')) return;
+    resetForm(); showTab('lookup');
+  });
 
   /* ---------- 내 주문 확인 ---------- */
   const BADGE = { '입금 확인 중':'b-wait', '입금 확인 완료':'b-paid', '발송 준비 중':'b-ship', '취소됨':'b-cancel' };
@@ -678,11 +744,12 @@
   });
 
   function renderOrders(d){
+    lastOrders = d.orders;
     if (!d.orders.length) { $('lkResult').innerHTML = '<div class="empty-msg">이 이름과 번호로 된 주문이 없어요.<br>주문하실 때 적은 주문자 정보로 다시 확인해주세요.</div>'; return; }
     $('lkResult').innerHTML = d.orders.map(o => `
       <div class="ocard ${o.status === '취소됨' ? 'cancelled' : ''}">
         <div class="top">
-          <div><div class="id">주문번호 ${esc(o.orderId)}</div><div class="dt">${esc(o.date)}</div></div>
+          <div><div class="id">주문번호 ${esc(o.orderId)}${o.changed ? '<span class="chg">변경됨</span>' : ''}</div><div class="dt">${esc(o.date)}</div></div>
           <span class="badge ${BADGE[o.status] || 'b-wait'}">${o.status === '입금 확인 완료' ? '✓ ' : ''}${esc(o.status)}</span>
         </div>
         ${o.dests.map((x, i) => `<div class="cdest">
@@ -691,14 +758,18 @@
         <div class="meta">보내는 분 <b>${esc(o.sender)}</b> · 입금자명 <b>${esc(o.payer)}</b></div>
         <div class="meta">${o.status === '취소됨' ? '취소된 주문이에요' : '입금할 금액'} <b class="total">${won(o.total)}</b></div>
         ${o.status === '입금 확인 중' ? `<div class="bank" style="font-size:15px">입금 계좌<b style="font-size:17px">${esc(d.bank || '')}</b></div>` : ''}
-        ${o.canCancel ? `<button type="button" class="btn btn-line" data-cancel="${esc(o.orderId)}" style="margin-top:10px">주문 취소하기</button>
-          <p class="hint center">${esc(o.cancelUntil)}까지 취소할 수 있어요</p>` : ''}
+        ${o.canCancel ? `<div class="row" style="margin-top:10px">
+            ${o.edit ? `<button type="button" class="btn btn-dark" data-edit="${esc(o.orderId)}">✏️ 주문 변경하기</button>` : ''}
+            <button type="button" class="btn btn-line" data-cancel="${esc(o.orderId)}">주문 취소하기</button></div>
+          <p class="hint center">${esc(o.cancelUntil)}까지 변경하거나 취소할 수 있어요</p>` : ''}
         ${!o.canCancel && o.status !== '취소됨' ? `<p class="hint">취소·변경은 ${esc(d.phone || '농장')}로 연락 주세요.</p>` : ''}
         ${o.canDelete ? `<button type="button" class="btn btn-line" data-hide="${esc(o.orderId)}" style="margin-top:10px;color:#666">🗑 이 내역 지우기</button>` : ''}
         <p class="hint" style="font-size:13px">${o.deleteFrom ? esc(o.deleteFrom) + '부터 직접 지울 수 있어요 · ' : ''}${o.autoGone ? esc(o.autoGone) + '에 이 내역은 자동으로 사라져요' : ''}</p>
       </div>`).join('');
   }
   $('lkResult').addEventListener('click', e => {
+    const ed = e.target.closest('button[data-edit]');
+    if (ed) { const o = lastOrders.find(x => x.orderId === ed.dataset.edit); if (o) startEdit(o); return; }
     const h = e.target.closest('button[data-hide]');
     if (h) {
       if (!confirm('주문번호 ' + h.dataset.hide + ' 내역을 지울까요?\n지우면 [내 주문 확인]에서 다시 볼 수 없어요.')) return;

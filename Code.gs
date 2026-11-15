@@ -30,7 +30,9 @@ const ORDER_HEADERS = [
   // ↓ 3판에서 추가 (손님이 지운 날짜 — 손님 화면에서만 숨김, 시트 기록은 남음)
   '손님 내역삭제',
   // ↓ 4판에서 추가 (입금확인에 체크한 시각 — 자동으로 적혀요)
-  '입금확인일시'
+  '입금확인일시',
+  // ↓ 5판에서 추가 (손님이 주문을 변경한 시각)
+  '변경일시'
 ];
 const COL = {}; ORDER_HEADERS.forEach((h, i) => COL[h] = i + 1);
 
@@ -45,6 +47,7 @@ const DEFAULT_PRICES = [
 ];
 
 const OLD_GUIDES = [
+  '· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러 배송지를 추가하세요.\n· 주문 후 2시간 안에는 [내 주문 확인]에서 직접 취소할 수 있어요.\n· 입금 확인된 주문은 주문일로부터 2주가 지나면 [내 주문 확인]에서 내역을 직접 지울 수 있어요.\n· 주문 내역은 주문일로부터 1달이 지나면 [내 주문 확인]에서 자동으로 사라져요.\n· 주문 정보를 완전히 없애고 싶으시면 [내 주문 확인] 맨 아래 [정보 삭제 요청]을 눌러주세요. 모든 주문이 입금 확인되고 일주일이 지나면 요청할 수 있고, 농장에 남은 기록까지 바로 지워져요.',
   '· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러 배송지를 추가하세요.\n· 주문 후 2시간 안에는 [내 주문 확인]에서 직접 취소할 수 있어요.\n· 입금 확인된 주문은 주문일로부터 2주가 지나면 [내 주문 확인]에서 내역을 직접 지울 수 있어요.\n· 주문 내역은 주문일로부터 1달이 지나면 [내 주문 확인]에서 자동으로 사라져요.\n· 주문 정보를 완전히 없애고 싶으시면 [내 주문 확인] 맨 아래 [정보 삭제 요청]을 눌러주세요. 농장에 남은 기록까지 바로 지워져요.',
   '· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러 배송지를 추가하세요.\n· 주문 후 2시간 안에는 [내 주문 확인]에서 직접 취소할 수 있어요.\n· 입금 확인된 주문은 주문일로부터 2주가 지나면 [내 주문 확인]에서 내역을 직접 지울 수 있어요.\n· 주문 내역은 주문일로부터 1달이 지나면 [내 주문 확인]에서 자동으로 사라져요.',
   '· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러 배송지를 추가하세요.\n· 주문 후 2시간 안에는 [내 주문 확인]에서 직접 취소할 수 있어요.\n· 받으신 사과에 문제가 있으면 사진과 함께 문자 주세요.'
@@ -55,7 +58,7 @@ const DEFAULT_SETTINGS = [
   ['입금 계좌', '○○은행 000-0000-0000 (예금주 ○○○)', '주문 완료 화면에 나옵니다'],
   ['문의 전화', '010-0000-0000', ''],
   ['공지', '기본 택배비 무료 · 입금 확인 후 순서대로 발송', '주문서 맨 위 빨간 띠에 나옵니다 (비워도 됨)'],
-  ['안내사항', '· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러 배송지를 추가하세요.\n· 주문 후 2시간 안에는 [내 주문 확인]에서 직접 취소할 수 있어요.\n· 입금 확인된 주문은 주문일로부터 2주가 지나면 [내 주문 확인]에서 내역을 직접 지울 수 있어요.\n· 주문 내역은 주문일로부터 1달이 지나면 [내 주문 확인]에서 자동으로 사라져요.\n· 주문 정보를 완전히 없애고 싶으시면 [내 주문 확인] 맨 아래 [정보 삭제 요청]을 눌러주세요. 모든 주문이 입금 확인되고 일주일이 지나면 요청할 수 있고, 농장에 남은 기록까지 바로 지워져요.', '주문서의 안내사항 상자에 나옵니다. 칸 안에서 줄바꿈은 Ctrl+Enter (비워도 됨)'],
+  ['안내사항', '· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러 배송지를 추가하세요.\n· 주문 후 2시간 안에는 (입금 확인 전이면) [내 주문 확인]에서 직접 변경하거나 취소할 수 있어요.\n· 입금 확인된 주문은 주문일로부터 2주가 지나면 [내 주문 확인]에서 내역을 직접 지울 수 있어요.\n· 주문 내역은 주문일로부터 1달이 지나면 [내 주문 확인]에서 자동으로 사라져요.\n· 주문 정보를 완전히 없애고 싶으시면 [내 주문 확인] 맨 아래 [정보 삭제 요청]을 눌러주세요. 모든 주문이 입금 확인되고 일주일이 지나면 요청할 수 있고, 농장에 남은 기록까지 바로 지워져요.', '주문서의 안내사항 상자에 나옵니다. 칸 안에서 줄바꿈은 Ctrl+Enter (비워도 됨)'],
   ['주문 받기', '켜기', '켜기 / 끄기 — 끄면 주문서가 닫힙니다'],
   ['기본 보내는 분', '', '송장에 찍힐 보내는 분 이름. 비우면 농장 이름'],
   ['기본 보내는 분 연락처', '', '송장에 찍힐 보내는 분 연락처. 비우면 문의 전화'],
@@ -230,6 +233,7 @@ function doPost(e) {
   if (d.action === 'cancel') return cancelOrder(d);
   if (d.action === 'hide') return hideOrder(d);
   if (d.action === 'erase') return eraseCustomer(d);
+  if (d.action === 'modify') return modifyOrder(d);
   return placeOrder(d);
 }
 
@@ -260,87 +264,140 @@ function statusOfRows(rows) {
   return '입금 확인 중';
 }
 
-/* ---------- 주문 접수 ---------- */
+/* ---------- 주문 접수 · 변경 ---------- */
+// 주문서에서 온 내용을 확인하고 금액을 시트 가격으로 다시 계산 (접수·변경 공통)
+function buildOrder(d, s) {
+  const buyerName = str(d.buyerName, 30), buyerPhone = fmtPhone(d.buyerPhone), payer = str(d.payer, 30);
+  const custom = d.senderMode === 'custom';
+  const senderName = custom ? str(d.senderName, 30) : '', senderPhone = custom ? fmtPhone(d.senderPhone) : '';
+  if (!buyerName || !payer) return { error: '이름과 입금자명을 확인해주세요.' };
+  if (!mobileOk(buyerPhone)) return { error: '주문하시는 분 휴대폰 번호를 확인해주세요.' };
+  if (custom && (!senderName || !anyPhoneOk(senderPhone))) return { error: '보내는 분 이름과 연락처를 확인해주세요.' };
+
+  // 배송지 목록 (1판 주문서 형식도 받음)
+  const rawDests = Array.isArray(d.destinations) ? d.destinations
+    : [{ recvName: d.recvName, recvPhone: d.recvPhone, zip: d.zip, addr: d.addr, addr2: d.addr2, memo: d.memo, items: d.items }];
+  if (!rawDests.length || rawDests.length > MAX_DEST) return { error: '배송지는 1~' + MAX_DEST + '곳까지 가능해요.' };
+
+  const prices = {};
+  readProducts().forEach(p => prices[p.group + '|' + p.name] = p);
+
+  const dests = [];
+  for (let n = 0; n < rawDests.length; n++) {
+    const r = rawDests[n] || {}, label = rawDests.length > 1 ? (n + 1) + '번째 배송지의 ' : '';
+    const o = { recvName: str(r.recvName, 30), recvPhone: fmtPhone(r.recvPhone), zip: str(r.zip, 10),
+                addr: str(r.addr, 200), addr2: str(r.addr2, 100), memo: str(r.memo, 200), items: [] };
+    if (!o.recvName || !mobileOk(o.recvPhone)) return { error: label + '받는 분 이름·휴대폰 번호를 확인해주세요.' };
+    if (!/^\d{5}$/.test(o.zip) || !o.addr) return { error: label + '주소를 다시 검색해주세요.' };
+    for (const it of (Array.isArray(r.items) ? r.items : [])) {
+      const p = prices[str(it.group) + '|' + str(it.name)];
+      const q = Math.floor(Number(it.qty));
+      if (!p || !(q > 0) || q > 50) continue;
+      if (p.soldOut) return { error: p.group + ' ' + p.name + ' 상품이 품절됐어요. 다른 상품을 골라주세요.' };
+      o.items.push({ group: p.group, name: p.name, price: p.price, qty: q });
+    }
+    if (!o.items.length) return { error: label + '상품을 골라주세요.' };
+    o.boxes = o.items.reduce((a, i) => a + i.qty, 0);
+    o.sub = o.items.reduce((a, i) => a + i.qty * i.price, 0);
+    const island = s.islandAreas.some(a => o.addr.indexOf(a) !== -1);
+    o.fee = island ? (s.islandFeeMode === '주문당' ? s.islandFee : s.islandFee * o.boxes) : 0;
+    o.itemText = o.items.map(i => i.group + ' ' + i.name + ' ×' + i.qty).join(', ');
+    dests.push(o);
+  }
+  const total = dests.reduce((a, o) => a + o.sub + o.fee, 0);
+  return { buyerName, buyerPhone, payer, senderName, senderPhone, dests, total };
+}
+
+// 주문 줄들을 시트 맨 아래에 씀
+function writeOrderRows(sh, orderId, when, o, changedAt) {
+  const rows = o.dests.map((x, n) => {
+    const row = new Array(ORDER_HEADERS.length).fill('');
+    const put = (h, v) => row[COL[h] - 1] = (typeof v === 'string' ? safe(v) : v);
+    put('주문번호', orderId); put('주문일시', when); put('입금확인', false);
+    put('주문자', o.buyerName); put('주문자 연락처', o.buyerPhone);
+    put('받는 분', x.recvName); put('받는 분 연락처', x.recvPhone);
+    put('우편번호', x.zip); put('주소', x.addr); put('상세주소', x.addr2);
+    put('주문 내역', x.itemText); put('박스 수', x.boxes); put('상품 금액', x.sub); put('추가 택배비', x.fee);
+    put('입금할 금액', n === 0 ? o.total : '');
+    put('입금자명', o.payer); put('배송 메모', x.memo);
+    put('상품코드(수정금지)', JSON.stringify(x.items.map(i => [i.group, i.name, i.qty])));
+    put('보내는 분', o.senderName || '(농장 기본)'); put('보내는 분 연락처', o.senderPhone);
+    put('배송지', (n + 1) + '/' + o.dests.length);
+    put('변경일시', changedAt || '');
+    return row;
+  });
+  const start = sh.getLastRow() + 1;
+  sh.getRange(start, 1, rows.length, ORDER_HEADERS.length).setValues(rows);
+  sh.getRange(start, COL['입금확인'], rows.length, 1).insertCheckboxes();
+  sh.getRange(start, COL['우편번호'], rows.length, 1).setNumberFormat('@').setValues(o.dests.map(x => [x.zip]));
+}
+
+function orderMailLines(orderId, o) {
+  return ['주문번호: ' + orderId, '주문자: ' + o.buyerName + ' (' + o.buyerPhone + ')',
+    '보내는 분: ' + (o.senderName ? o.senderName + ' (' + o.senderPhone + ')' : '농장 기본'),
+    '입금할 금액: ' + o.total.toLocaleString() + '원 (입금자명 ' + o.payer + ')', '']
+    .concat(o.dests.map((x, n) => '[' + (n + 1) + '] ' + x.recvName + ' ' + x.recvPhone + ' / (' + x.zip + ') ' + x.addr + ' ' + x.addr2 + ' / ' + x.itemText + (x.memo ? ' / 메모: ' + x.memo : '')));
+}
+
 function placeOrder(d) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(20000);
     const s = readSettings();
     if (!s.open) return json({ ok: false, error: '지금은 주문을 받지 않아요.' });
-
-    const buyerName = str(d.buyerName, 30), buyerPhone = fmtPhone(d.buyerPhone), payer = str(d.payer, 30);
-    const custom = d.senderMode === 'custom';
-    const senderName = custom ? str(d.senderName, 30) : '', senderPhone = custom ? fmtPhone(d.senderPhone) : '';
-    if (!buyerName || !payer) return json({ ok: false, error: '이름과 입금자명을 확인해주세요.' });
-    if (!mobileOk(buyerPhone)) return json({ ok: false, error: '주문하시는 분 휴대폰 번호를 확인해주세요.' });
-    if (custom && (!senderName || !anyPhoneOk(senderPhone))) return json({ ok: false, error: '보내는 분 이름과 연락처를 확인해주세요.' });
-
-    // 배송지 목록 (1판 주문서 형식도 받음)
-    let rawDests = Array.isArray(d.destinations) ? d.destinations
-      : [{ recvName: d.recvName, recvPhone: d.recvPhone, zip: d.zip, addr: d.addr, addr2: d.addr2, memo: d.memo, items: d.items }];
-    if (!rawDests.length || rawDests.length > MAX_DEST) return json({ ok: false, error: '배송지는 1~' + MAX_DEST + '곳까지 가능해요.' });
-
-    const prices = {};
-    readProducts().forEach(p => prices[p.group + '|' + p.name] = p);
-
-    const dests = [];
-    for (let n = 0; n < rawDests.length; n++) {
-      const r = rawDests[n] || {}, label = rawDests.length > 1 ? (n + 1) + '번째 배송지의 ' : '';
-      const o = { recvName: str(r.recvName, 30), recvPhone: fmtPhone(r.recvPhone), zip: str(r.zip, 10),
-                  addr: str(r.addr, 200), addr2: str(r.addr2, 100), memo: str(r.memo, 200), items: [] };
-      if (!o.recvName || !mobileOk(o.recvPhone)) return json({ ok: false, error: label + '받는 분 이름·휴대폰 번호를 확인해주세요.' });
-      if (!/^\d{5}$/.test(o.zip) || !o.addr) return json({ ok: false, error: label + '주소를 다시 검색해주세요.' });
-      for (const it of (Array.isArray(r.items) ? r.items : [])) {
-        const p = prices[str(it.group) + '|' + str(it.name)];
-        const q = Math.floor(Number(it.qty));
-        if (!p || !(q > 0) || q > 50) continue;
-        if (p.soldOut) return json({ ok: false, error: p.group + ' ' + p.name + ' 상품이 방금 품절됐어요. 다른 상품을 골라주세요.' });
-        o.items.push({ group: p.group, name: p.name, price: p.price, qty: q });
-      }
-      if (!o.items.length) return json({ ok: false, error: label + '상품을 골라주세요.' });
-      o.boxes = o.items.reduce((a, i) => a + i.qty, 0);
-      o.sub = o.items.reduce((a, i) => a + i.qty * i.price, 0);
-      const island = s.islandAreas.some(a => o.addr.indexOf(a) !== -1);
-      o.fee = island ? (s.islandFeeMode === '주문당' ? s.islandFee : s.islandFee * o.boxes) : 0;
-      o.itemText = o.items.map(i => i.group + ' ' + i.name + ' ×' + i.qty).join(', ');
-      dests.push(o);
-    }
-    const total = dests.reduce((a, o) => a + o.sub + o.fee, 0);
+    const o = buildOrder(d, s);
+    if (o.error) return json({ ok: false, error: o.error });
 
     const sh = SpreadsheetApp.getActive().getSheetByName(SHEET_ORDERS);
     ensureOrderHeaders(sh);
     const now = new Date();
     const orderId = makeOrderId(sh, now);
-    const when = Utilities.formatDate(now, TZ, 'yyyy-MM-dd HH:mm');
-    const rows = dests.map((o, n) => {
-      const row = new Array(ORDER_HEADERS.length).fill('');
-      const put = (h, v) => row[COL[h] - 1] = (typeof v === 'string' ? safe(v) : v);
-      put('주문번호', orderId); put('주문일시', when); put('입금확인', false);
-      put('주문자', buyerName); put('주문자 연락처', buyerPhone);
-      put('받는 분', o.recvName); put('받는 분 연락처', o.recvPhone);
-      put('우편번호', o.zip); put('주소', o.addr); put('상세주소', o.addr2);
-      put('주문 내역', o.itemText); put('박스 수', o.boxes); put('상품 금액', o.sub); put('추가 택배비', o.fee);
-      put('입금할 금액', n === 0 ? total : '');
-      put('입금자명', payer); put('배송 메모', o.memo);
-      put('상품코드(수정금지)', JSON.stringify(o.items.map(i => [i.group, i.name, i.qty])));
-      put('보내는 분', senderName || '(농장 기본)'); put('보내는 분 연락처', senderPhone);
-      put('배송지', (n + 1) + '/' + dests.length);
-      return row;
-    });
-    const start = sh.getLastRow() + 1;
-    sh.getRange(start, 1, rows.length, ORDER_HEADERS.length).setValues(rows);
-    sh.getRange(start, COL['입금확인'], rows.length, 1).insertCheckboxes();
-    sh.getRange(start, COL['우편번호'], rows.length, 1).setNumberFormat('@').setValues(dests.map(o => [o.zip]));
+    writeOrderRows(sh, orderId, Utilities.formatDate(now, TZ, 'yyyy-MM-dd HH:mm'), o, '');
 
-    notify(s, '🍎 새 주문 ' + orderId + ' · ' + buyerName + ' · ' + total.toLocaleString() + '원' + (dests.length > 1 ? ' · ' + dests.length + '곳' : ''),
-      ['주문번호: ' + orderId, '주문자: ' + buyerName + ' (' + buyerPhone + ')',
-       '보내는 분: ' + (senderName ? senderName + ' (' + senderPhone + ')' : '농장 기본'),
-       '입금할 금액: ' + total.toLocaleString() + '원 (입금자명 ' + payer + ')', '']
-      .concat(dests.map((o, n) => '[' + (n + 1) + '] ' + o.recvName + ' ' + o.recvPhone + ' / (' + o.zip + ') ' + o.addr + ' ' + o.addr2 + ' / ' + o.itemText + (o.memo ? ' / 메모: ' + o.memo : ''))));
-
-    return json({ ok: true, orderId: orderId, total: total, bank: s.bank, cancelHours: s.cancelHours });
+    notify(s, '🍎 새 주문 ' + orderId + ' · ' + o.buyerName + ' · ' + o.total.toLocaleString() + '원' + (o.dests.length > 1 ? ' · ' + o.dests.length + '곳' : ''),
+      orderMailLines(orderId, o));
+    return json({ ok: true, orderId: orderId, total: o.total, bank: s.bank, cancelHours: s.cancelHours });
   } catch (err) {
     return json({ ok: false, error: '주문 저장 중 문제가 생겼어요.' });
+  } finally {
+    try { lock.releaseLock(); } catch (x) {}
+  }
+}
+
+// 손님 주문 변경: 취소와 같은 조건(입금 확인 전 + 취소 가능 시간 안). 주문번호·주문일시는 그대로
+function modifyOrder(d) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    const s = readSettings();
+    const id = str(d.orderId, 20);
+    const name = str(d.buyerName, 30).replace(/\s/g, ''), phone = digits(d.buyerPhone);
+    const { sh, groups } = findOrders(name, phone);
+    const hit = groups.find(x => x.id === id);
+    if (!hit) return json({ ok: false, error: '주문을 찾지 못했어요.' });
+    const st = statusOfRows(hit.rows);
+    const call = s.phone ? '\n' + s.phone + '로 연락 주세요.' : '';
+    if (st === '취소됨') return json({ ok: false, error: '취소된 주문은 변경할 수 없어요.' });
+    if (st !== '입금 확인 중') return json({ ok: false, error: '입금이 확인된 주문은 직접 변경할 수 없어요.' + call });
+    const t = orderTime(hit.rows[0].g('주문일시'));
+    if (!t || s.cancelHours <= 0 || Date.now() > t.getTime() + s.cancelHours * 3600 * 1000)
+      return json({ ok: false, error: '변경 가능 시간(' + s.cancelHours + '시간)이 지났어요.' + call });
+
+    const o = buildOrder(d, s);
+    if (o.error) return json({ ok: false, error: o.error });
+    const before = hit.rows.map(x => x.g('받는 분') + ': ' + x.g('주문 내역')).join(' / ');
+    const when = Utilities.formatDate(t, TZ, 'yyyy-MM-dd HH:mm');
+
+    // 예전 줄을 지우고(아래부터) 새 내용으로 다시 씀
+    hit.rows.map(x => x.row).sort((a, b) => b - a).forEach(r => sh.deleteRow(r));
+    writeOrderRows(sh, id, when, o, Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm'));
+
+    notify(s, '✏️ 주문 변경 ' + id + ' · ' + o.buyerName + ' · ' + o.total.toLocaleString() + '원',
+      ['손님이 주문을 변경했어요.', '변경 전: ' + before, ''].concat(orderMailLines(id, o)));
+    return json({ ok: true, orderId: id, total: o.total, bank: s.bank, cancelHours: s.cancelHours,
+                  cancelUntil: Utilities.formatDate(new Date(t.getTime() + s.cancelHours * 3600 * 1000), TZ, 'MM월 dd일 HH:mm') });
+  } catch (err) {
+    return json({ ok: false, error: '변경 중 문제가 생겼어요.' });
   } finally {
     try { lock.releaseLock(); } catch (x) {}
   }
@@ -397,7 +454,21 @@ function lookupOrders(d) {
         memo: String(x.g('배송 메모'))
       })),
       status: status,
+      changed: rows.some(x => String(x.g('변경일시')).trim()),
       canCancel: status === '입금 확인 중' && s.cancelHours > 0 && now < deadline,
+      // 변경할 때 주문서에 다시 채울 내용 (변경 가능한 주문만)
+      edit: (status === '입금 확인 중' && s.cancelHours > 0 && now < deadline) ? {
+        senderMode: (!sender || sender === '(농장 기본)') ? 'farm' : 'custom',
+        senderName: (!sender || sender === '(농장 기본)') ? '' : sender,
+        senderPhone: String(g0('보내는 분 연락처') || ''),
+        payer: String(g0('입금자명')),
+        dests: rows.map(x => {
+          let items = [];
+          try { items = JSON.parse(x.g('상품코드(수정금지)')).map(a => ({ group: a[0], name: a[1], qty: a[2] })); } catch (e) {}
+          return { recvName: String(x.g('받는 분')), recvPhone: String(x.g('받는 분 연락처')), zip: String(x.g('우편번호')),
+                   addr: String(x.g('주소')), addr2: String(x.g('상세주소')), memo: String(x.g('배송 메모')), items: items };
+        })
+      } : null,
       cancelUntil: deadline ? Utilities.formatDate(new Date(deadline), TZ, 'MM월 dd일 HH:mm') : '',
       canDelete: canHide(status, t, s),
       deleteFrom: (status === '입금 확인 완료' || status === '발송 준비 중') && delFrom > now ? fmtDay(delFrom) : '',
