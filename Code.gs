@@ -28,7 +28,9 @@ const ORDER_HEADERS = [
   // ↓ 2판에서 추가
   '보내는 분', '보내는 분 연락처', '취소일시', '배송지',
   // ↓ 3판에서 추가 (손님이 지운 날짜 — 손님 화면에서만 숨김, 시트 기록은 남음)
-  '손님 내역삭제'
+  '손님 내역삭제',
+  // ↓ 4판에서 추가 (입금확인에 체크한 시각 — 자동으로 적혀요)
+  '입금확인일시'
 ];
 const COL = {}; ORDER_HEADERS.forEach((h, i) => COL[h] = i + 1);
 
@@ -43,6 +45,7 @@ const DEFAULT_PRICES = [
 ];
 
 const OLD_GUIDES = [
+  '· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러 배송지를 추가하세요.\n· 주문 후 2시간 안에는 [내 주문 확인]에서 직접 취소할 수 있어요.\n· 입금 확인된 주문은 주문일로부터 2주가 지나면 [내 주문 확인]에서 내역을 직접 지울 수 있어요.\n· 주문 내역은 주문일로부터 1달이 지나면 [내 주문 확인]에서 자동으로 사라져요.\n· 주문 정보를 완전히 없애고 싶으시면 [내 주문 확인] 맨 아래 [정보 삭제 요청]을 눌러주세요. 농장에 남은 기록까지 바로 지워져요.',
   '· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러 배송지를 추가하세요.\n· 주문 후 2시간 안에는 [내 주문 확인]에서 직접 취소할 수 있어요.\n· 입금 확인된 주문은 주문일로부터 2주가 지나면 [내 주문 확인]에서 내역을 직접 지울 수 있어요.\n· 주문 내역은 주문일로부터 1달이 지나면 [내 주문 확인]에서 자동으로 사라져요.',
   '· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러 배송지를 추가하세요.\n· 주문 후 2시간 안에는 [내 주문 확인]에서 직접 취소할 수 있어요.\n· 받으신 사과에 문제가 있으면 사진과 함께 문자 주세요.'
 ];
@@ -52,12 +55,13 @@ const DEFAULT_SETTINGS = [
   ['입금 계좌', '○○은행 000-0000-0000 (예금주 ○○○)', '주문 완료 화면에 나옵니다'],
   ['문의 전화', '010-0000-0000', ''],
   ['공지', '기본 택배비 무료 · 입금 확인 후 순서대로 발송', '주문서 맨 위 빨간 띠에 나옵니다 (비워도 됨)'],
-  ['안내사항', '· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러 배송지를 추가하세요.\n· 주문 후 2시간 안에는 [내 주문 확인]에서 직접 취소할 수 있어요.\n· 입금 확인된 주문은 주문일로부터 2주가 지나면 [내 주문 확인]에서 내역을 직접 지울 수 있어요.\n· 주문 내역은 주문일로부터 1달이 지나면 [내 주문 확인]에서 자동으로 사라져요.\n· 주문 정보를 완전히 없애고 싶으시면 [내 주문 확인] 맨 아래 [정보 삭제 요청]을 눌러주세요. 농장에 남은 기록까지 바로 지워져요.', '주문서의 안내사항 상자에 나옵니다. 칸 안에서 줄바꿈은 Ctrl+Enter (비워도 됨)'],
+  ['안내사항', '· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러 배송지를 추가하세요.\n· 주문 후 2시간 안에는 [내 주문 확인]에서 직접 취소할 수 있어요.\n· 입금 확인된 주문은 주문일로부터 2주가 지나면 [내 주문 확인]에서 내역을 직접 지울 수 있어요.\n· 주문 내역은 주문일로부터 1달이 지나면 [내 주문 확인]에서 자동으로 사라져요.\n· 주문 정보를 완전히 없애고 싶으시면 [내 주문 확인] 맨 아래 [정보 삭제 요청]을 눌러주세요. 모든 주문이 입금 확인되고 일주일이 지나면 요청할 수 있고, 농장에 남은 기록까지 바로 지워져요.', '주문서의 안내사항 상자에 나옵니다. 칸 안에서 줄바꿈은 Ctrl+Enter (비워도 됨)'],
   ['주문 받기', '켜기', '켜기 / 끄기 — 끄면 주문서가 닫힙니다'],
   ['기본 보내는 분', '', '송장에 찍힐 보내는 분 이름. 비우면 농장 이름'],
   ['기본 보내는 분 연락처', '', '송장에 찍힐 보내는 분 연락처. 비우면 문의 전화'],
   ['내역 삭제 가능 일수', 14, '입금 확인된 주문을 손님이 [내 주문 확인]에서 지울 수 있게 되는 날 (주문일로부터 며칠 뒤)'],
   ['내역 보관 일수', 30, '주문일로부터 며칠이 지나면 [내 주문 확인]에서 자동으로 사라지는지 (시트 기록은 그대로 남아요)'],
+  ['정보 삭제 가능 일수', 7, '모든 주문이 입금 확인된 뒤 며칠이 지나야 손님이 [정보 삭제 요청]을 할 수 있는지'],
   ['취소 가능 시간', 2, '주문 후 몇 시간 안에 손님이 직접 취소할 수 있는지 (입금 확인 전만, 0이면 취소 버튼 없음)'],
   ['추가 택배비', 3000, '제주·도서산간 추가 금액'],
   ['추가 택배비 방식', '박스당', '박스당 / 주문당(배송지당)'],
@@ -83,10 +87,14 @@ function onEdit(e) {
     const id = String(sh.getRange(e.range.getRow(), COL['주문번호']).getValue());
     if (!id) return;
     const val = e.range.getValue() === true;
+    const stamp = val ? Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm') : '';
+    ensureOrderHeaders(sh);
     const ids = sh.getRange(2, COL['주문번호'], sh.getLastRow() - 1, 1).getValues();
     ids.forEach((r, i) => {
       const row = i + 2;
-      if (row !== e.range.getRow() && String(r[0]) === id) sh.getRange(row, COL['입금확인']).setValue(val);
+      if (String(r[0]) !== id) return;
+      if (row !== e.range.getRow()) sh.getRange(row, COL['입금확인']).setValue(val);
+      sh.getRange(row, COL['입금확인일시']).setValue(stamp);   // 입금 확인한 시각 기록 (해제하면 지움)
     });
   } catch (x) {}
 }
@@ -156,7 +164,7 @@ function readSettings() {
   const m = {};
   if (sh && sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues().forEach(r => { if (r[0]) m[String(r[0]).trim()] = r[1]; });
   // 1판 시트라면 새 설정 항목(안내사항 등)을 알아서 추가
-  if (sh && (!('안내사항' in m) || !('내역 보관 일수' in m))) {
+  if (sh && (!('안내사항' in m) || !('내역 보관 일수' in m) || !('정보 삭제 가능 일수' in m))) {
     ensureSettings(sh);
     DEFAULT_SETTINGS.forEach(r => { if (!(r[0] in m)) m[r[0]] = r[1]; });
   }
@@ -182,6 +190,7 @@ function readSettings() {
     cancelHours: num('취소 가능 시간', 2),
     deleteDays: num('내역 삭제 가능 일수', 14),
     keepDays: num('내역 보관 일수', 30),
+    eraseDays: num('정보 삭제 가능 일수', 7),
     islandFee: Number(m['추가 택배비']) || 0,
     islandFeeMode: String(m['추가 택배비 방식'] || '박스당').trim().indexOf('주문당') === 0 ? '주문당' : '박스당',
     islandAreas: String(m['추가 택배비 지역'] || '').split(',').map(s => s.trim()).filter(Boolean),
@@ -395,7 +404,9 @@ function lookupOrders(d) {
       autoGone: t && s.keepDays > 0 ? fmtDay(t.getTime() + s.keepDays * DAY) : ''
     };
   });
-  return json({ ok: true, orders: orders, bank: s.bank, phone: s.phone });
+  const chk = eraseCheck(groups, s);   // 숨긴 주문까지 포함해서 판단
+  return json({ ok: true, orders: orders, bank: s.bank, phone: s.phone,
+                erase: { ok: chk.ok, msg: chk.msg, days: s.eraseDays, any: groups.length > 0 } });
 }
 
 /* ---------- 손님 취소 ---------- */
@@ -476,6 +487,26 @@ function makeOrderId(sh, now) {
 }
 
 /* ---------- 손님 정보 삭제 요청 (시트에서 실제로 지움) ---------- */
+// 정보 삭제 가능 여부: 취소되지 않은 주문이 모두 입금 확인되고, 그 뒤 정한 일수가 지나야 함
+function eraseCheck(groups, s) {
+  const DAY = 24 * 3600 * 1000, now = Date.now();
+  const unpaid = [];
+  let from = 0;
+  groups.forEach(x => {
+    const st = statusOfRows(x.rows);
+    if (st === '취소됨') return;
+    if (st === '입금 확인 중') { unpaid.push(x.id); return; }
+    // 입금 확인 시각 (예전 주문처럼 기록이 없으면 주문일 기준)
+    let paidAt = 0;
+    x.rows.forEach(r => { const t = orderTime(r.g('입금확인일시')); if (t) paidAt = Math.max(paidAt, t.getTime()); });
+    if (!paidAt) { const t = orderTime(x.rows[0].g('주문일시')); paidAt = t ? t.getTime() : now; }
+    from = Math.max(from, paidAt + s.eraseDays * DAY);
+  });
+  if (unpaid.length) return { ok: false, unpaid: unpaid, msg: '입금 확인 전인 주문이 있어서 아직 요청할 수 없어요. (' + unpaid.join(', ') + ')' };
+  if (from > now) return { ok: false, from: from, msg: Utilities.formatDate(new Date(from), TZ, 'M월 d일 HH:mm') + '부터 요청할 수 있어요.' };
+  return { ok: true, msg: '' };
+}
+
 function eraseCustomer(d) {
   const lock = LockService.getScriptLock();
   try {
@@ -486,12 +517,9 @@ function eraseCustomer(d) {
     const { sh, groups } = findOrders(name, phone);
     if (!groups.length) return json({ ok: false, error: '이 이름과 번호로 된 주문 정보가 없어요.' });
 
-    // 아직 보내지 않은 주문이 있으면 막음 (지우면 사과를 못 보내니까)
-    const open = groups.filter(x => { const st = statusOfRows(x.rows); return st === '입금 확인 중' || st === '입금 확인 완료'; });
-    if (open.length) {
-      return json({ ok: false, error: '아직 발송 전인 주문이 있어서 지금은 삭제할 수 없어요.\n(' + open.map(x => x.id).join(', ') + ')\n' +
-        '입금 전이면 먼저 주문을 취소하시고, 입금하셨으면 발송된 뒤에 다시 요청해주세요.' + (s.phone ? '\n문의: ' + s.phone : '') });
-    }
+    // 모든 주문이 입금 확인되고 정한 일수가 지나야 함
+    const chk = eraseCheck(groups, s);
+    if (!chk.ok) return json({ ok: false, error: chk.msg + (chk.unpaid ? '\n입금 전이면 먼저 주문을 취소해주세요.' : '') + (s.phone ? '\n문의: ' + s.phone : '') });
 
     // 손님 정보 없이 주문번호·금액만 기록으로 남김
     const ss = SpreadsheetApp.getActive();

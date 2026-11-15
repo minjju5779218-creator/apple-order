@@ -54,6 +54,7 @@
   .btn-red{background:var(--red);color:#fff}
   .btn-red:disabled{background:#d9a6a3}
   .btn-line{background:#fff;color:var(--ink);border:1px solid #cfc9c3}
+  .btn-line:disabled{opacity:.45;cursor:not-allowed}
   .btn-dark{background:var(--ink);color:#fff}
   .btn-add{background:#fff;color:var(--red-d);border:2px dashed #e5a9a5;margin-bottom:14px}
   .btn-sm{display:inline-block;width:auto;padding:8px 14px;font-size:15px;border-radius:10px}
@@ -186,7 +187,8 @@
       <h2 style="font-size:17px">정보 삭제 요청</h2>
       <p style="font-size:15px;margin:0 0 8px">주문하실 때 남긴 이름, 연락처, 주소 같은 정보를 농장 기록에서도 <b>완전히 지워요.</b></p>
       <div class="warn" style="font-size:14px;margin-bottom:12px">⚠️ 삭제하면 위 이름·번호로 된 <b>모든 주문 내역이 바로 없어지고 되돌릴 수 없어요.</b><br>
-      아직 발송 전인 주문이 있으면 삭제할 수 없어요. (입금 전이면 먼저 취소해주세요)</div>
+      <span id="eraseRule">모든 주문이 입금 확인되고 일주일이 지나야 요청할 수 있어요.</span></div>
+      <p id="eraseWhen" class="hint" style="margin:-4px 0 10px;font-weight:700;color:var(--red-d)" hidden></p>
       <button type="button" class="btn btn-line" id="eraseBtn" style="color:var(--red-d);border-color:#e5a9a5">정보 삭제 요청</button>
     </section>
   </div>
@@ -274,7 +276,7 @@
   const api = (body) => {
     if (DEMO) {
       if (!body) return Promise.resolve(demoData());
-      if (body.action === 'lookup') return Promise.resolve({ ok:true, orders:[] });
+      if (body.action === 'lookup') return Promise.resolve({ ok:true, orders:[], erase:{ ok:false, any:false } });
       if (body.action === 'cancel' || body.action === 'hide') return Promise.resolve({ ok:true });
       if (body.action === 'erase') return Promise.resolve({ ok:true, count:0 });
       return Promise.resolve({ ok:true, orderId:'미리보기-001', total: calc().total, cancelHours:2 });
@@ -645,7 +647,11 @@
         if (!d.ok) throw new Error(d.error);
         store.set({ name, phone });
         renderOrders(d);
-        $('eraseBox').hidden = false;
+        const er = d.erase || { ok:true, any:true };
+        $('eraseBox').hidden = !er.any;
+        if (er.days != null) $('eraseRule').textContent = '모든 주문이 입금 확인되고 ' + (er.days === 7 ? '일주일' : er.days + '일') + '이 지나야 요청할 수 있어요.';
+        $('eraseWhen').hidden = er.ok; $('eraseWhen').textContent = er.msg || '';
+        $('eraseBtn').disabled = !er.ok;
       })
       .catch(err => { $('lkResult').innerHTML = `<div class="empty-msg">${esc(err && err.message && !/fetch|JSON/i.test(err.message) ? err.message : '조회하지 못했어요. 잠시 후 다시 해주세요.')}</div>`; })
       .finally(() => { btn.disabled = false; btn.textContent = '주문 조회하기'; });
@@ -668,7 +674,7 @@
         $('lkResult').innerHTML = '<div class="empty-msg">정보가 삭제됐어요.<br>주문 ' + d.count + '건의 내역이 모두 지워졌어요.</div>';
       })
       .catch(err => alert(err && err.message && !/fetch|JSON/i.test(err.message) ? err.message : '삭제하지 못했어요. 잠시 후 다시 해주세요.'))
-      .finally(() => { b.disabled = false; b.textContent = '정보 삭제 요청'; });
+      .finally(() => { b.textContent = '정보 삭제 요청'; b.disabled = !$('eraseBox').hidden && !$('eraseWhen').hidden; });
   });
 
   function renderOrders(d){
