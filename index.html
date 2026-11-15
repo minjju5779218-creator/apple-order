@@ -268,7 +268,7 @@
     if (DEMO) {
       if (!body) return Promise.resolve(demoData());
       if (body.action === 'lookup') return Promise.resolve({ ok:true, orders:[] });
-      if (body.action === 'cancel') return Promise.resolve({ ok:true });
+      if (body.action === 'cancel' || body.action === 'hide') return Promise.resolve({ ok:true });
       return Promise.resolve({ ok:true, orderId:'미리보기-001', total: calc().total, cancelHours:2 });
     }
     return fetch(SCRIPT_URL, body ? { method:'POST', body: JSON.stringify(body) } : undefined).then(r => r.json());
@@ -660,9 +660,20 @@
         ${o.canCancel ? `<button type="button" class="btn btn-line" data-cancel="${esc(o.orderId)}" style="margin-top:10px">주문 취소하기</button>
           <p class="hint center">${esc(o.cancelUntil)}까지 취소할 수 있어요</p>` : ''}
         ${!o.canCancel && o.status !== '취소됨' ? `<p class="hint">취소·변경은 ${esc(d.phone || '농장')}로 연락 주세요.</p>` : ''}
+        ${o.canDelete ? `<button type="button" class="btn btn-line" data-hide="${esc(o.orderId)}" style="margin-top:10px;color:#666">🗑 이 내역 지우기</button>` : ''}
+        <p class="hint" style="font-size:13px">${o.deleteFrom ? esc(o.deleteFrom) + '부터 직접 지울 수 있어요 · ' : ''}${o.autoGone ? esc(o.autoGone) + '에 이 내역은 자동으로 사라져요' : ''}</p>
       </div>`).join('');
   }
   $('lkResult').addEventListener('click', e => {
+    const h = e.target.closest('button[data-hide]');
+    if (h) {
+      if (!confirm('주문번호 ' + h.dataset.hide + ' 내역을 지울까요?\n지우면 [내 주문 확인]에서 다시 볼 수 없어요.')) return;
+      h.disabled = true; h.textContent = '지우는 중…';
+      api({ action:'hide', orderId: h.dataset.hide, name: $('lkName').value.trim(), phone: $('lkPhone').value.trim() })
+        .then(d => { if (!d.ok) throw new Error(d.error); lookup(); })
+        .catch(err => { alert(err && err.message && !/fetch|JSON/i.test(err.message) ? err.message : '지우지 못했어요. 잠시 후 다시 해주세요.'); h.disabled = false; h.textContent = '🗑 이 내역 지우기'; });
+      return;
+    }
     const b = e.target.closest('button[data-cancel]'); if (!b) return;
     if (!confirm('주문번호 ' + b.dataset.cancel + ' 주문을 취소할까요?\n취소하면 되돌릴 수 없어요.')) return;
     b.disabled = true; b.textContent = '취소하는 중…';

@@ -25,7 +25,9 @@ const ORDER_HEADERS = [
   '상품 금액', '추가 택배비', '입금할 금액', '입금자명', '배송 메모',
   '상품코드(수정금지)',
   // ↓ 2판에서 추가
-  '보내는 분', '보내는 분 연락처', '취소일시', '배송지'
+  '보내는 분', '보내는 분 연락처', '취소일시', '배송지',
+  // ↓ 3판에서 추가 (손님이 지운 날짜 — 손님 화면에서만 숨김, 시트 기록은 남음)
+  '손님 내역삭제'
 ];
 const COL = {}; ORDER_HEADERS.forEach((h, i) => COL[h] = i + 1);
 
@@ -39,15 +41,21 @@ const DEFAULT_PRICES = [
   ['사과즙', '1박스 (50포)', 30000], ['사과즙', '2박스 (100포)', 50000]
 ];
 
+const OLD_GUIDES = [
+  '· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러 배송지를 추가하세요.\n· 주문 후 2시간 안에는 [내 주문 확인]에서 직접 취소할 수 있어요.\n· 받으신 사과에 문제가 있으면 사진과 함께 문자 주세요.'
+];
+
 const DEFAULT_SETTINGS = [
   ['농장 이름', '○○농원', '주문서 맨 위에 나옵니다'],
   ['입금 계좌', '○○은행 000-0000-0000 (예금주 ○○○)', '주문 완료 화면에 나옵니다'],
   ['문의 전화', '010-0000-0000', ''],
   ['공지', '기본 택배비 무료 · 입금 확인 후 순서대로 발송', '주문서 맨 위 빨간 띠에 나옵니다 (비워도 됨)'],
-  ['안내사항', '· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러 배송지를 추가하세요.\n· 주문 후 2시간 안에는 [내 주문 확인]에서 직접 취소할 수 있어요.\n· 받으신 사과에 문제가 있으면 사진과 함께 문자 주세요.', '주문서의 안내사항 상자에 나옵니다. 칸 안에서 줄바꿈은 Ctrl+Enter (비워도 됨)'],
+  ['안내사항', '· 입금 확인 후 2~3일 안에 발송해요.\n· 여러 곳에 보내실 때는 [다른 곳에도 보내기]를 눌러 배송지를 추가하세요.\n· 주문 후 2시간 안에는 [내 주문 확인]에서 직접 취소할 수 있어요.\n· 입금 확인된 주문은 주문일로부터 2주가 지나면 [내 주문 확인]에서 내역을 직접 지울 수 있어요.\n· 주문 내역은 주문일로부터 1달이 지나면 [내 주문 확인]에서 자동으로 사라져요.', '주문서의 안내사항 상자에 나옵니다. 칸 안에서 줄바꿈은 Ctrl+Enter (비워도 됨)'],
   ['주문 받기', '켜기', '켜기 / 끄기 — 끄면 주문서가 닫힙니다'],
   ['기본 보내는 분', '', '송장에 찍힐 보내는 분 이름. 비우면 농장 이름'],
   ['기본 보내는 분 연락처', '', '송장에 찍힐 보내는 분 연락처. 비우면 문의 전화'],
+  ['내역 삭제 가능 일수', 14, '입금 확인된 주문을 손님이 [내 주문 확인]에서 지울 수 있게 되는 날 (주문일로부터 며칠 뒤)'],
+  ['내역 보관 일수', 30, '주문일로부터 며칠이 지나면 [내 주문 확인]에서 자동으로 사라지는지 (시트 기록은 그대로 남아요)'],
   ['취소 가능 시간', 2, '주문 후 몇 시간 안에 손님이 직접 취소할 수 있는지 (입금 확인 전만, 0이면 취소 버튼 없음)'],
   ['추가 택배비', 3000, '제주·도서산간 추가 금액'],
   ['추가 택배비 방식', '박스당', '박스당 / 주문당(배송지당)'],
@@ -146,10 +154,18 @@ function readSettings() {
   const m = {};
   if (sh && sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, 2).getValues().forEach(r => { if (r[0]) m[String(r[0]).trim()] = r[1]; });
   // 1판 시트라면 새 설정 항목(안내사항 등)을 알아서 추가
-  if (sh && !('안내사항' in m)) {
+  if (sh && (!('안내사항' in m) || !('내역 보관 일수' in m))) {
     ensureSettings(sh);
     DEFAULT_SETTINGS.forEach(r => { if (!(r[0] in m)) m[r[0]] = r[1]; });
   }
+  // 예전 기본 안내문을 그대로 쓰고 있으면 새 안내문으로 바꿈 (직접 고친 안내문은 건드리지 않음)
+  if (sh && OLD_GUIDES.indexOf(String(m['안내사항'] || '').replace(/\r/g, '')) !== -1) {
+    const newGuide = DEFAULT_SETTINGS.find(r => r[0] === '안내사항')[1];
+    const keys = sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues();
+    keys.forEach((r, i) => { if (String(r[0]).trim() === '안내사항') sh.getRange(i + 2, 2).setValue(newGuide); });
+    m['안내사항'] = newGuide;
+  }
+  const num = (k, def) => (m[k] === '' || m[k] == null || isNaN(Number(m[k]))) ? def : Number(m[k]);
   const farmName = String(m['농장 이름'] || '');
   const phone = String(m['문의 전화'] || '');
   return {
@@ -161,7 +177,9 @@ function readSettings() {
     open: String(m['주문 받기'] || '켜기').trim() !== '끄기',
     senderName: String(m['기본 보내는 분'] || '').trim() || farmName,
     senderPhone: String(m['기본 보내는 분 연락처'] || '').trim() || phone,
-    cancelHours: m['취소 가능 시간'] === '' || m['취소 가능 시간'] == null ? 2 : Number(m['취소 가능 시간']) || 0,
+    cancelHours: num('취소 가능 시간', 2),
+    deleteDays: num('내역 삭제 가능 일수', 14),
+    keepDays: num('내역 보관 일수', 30),
     islandFee: Number(m['추가 택배비']) || 0,
     islandFeeMode: String(m['추가 택배비 방식'] || '박스당').trim().indexOf('주문당') === 0 ? '주문당' : '박스당',
     islandAreas: String(m['추가 택배비 지역'] || '').split(',').map(s => s.trim()).filter(Boolean),
@@ -199,6 +217,7 @@ function doPost(e) {
   try { d = JSON.parse(e.postData.contents); } catch (x) { return json({ ok: false, error: '잘못된 요청이에요.' }); }
   if (d.action === 'lookup') return lookupOrders(d);
   if (d.action === 'cancel') return cancelOrder(d);
+  if (d.action === 'hide') return hideOrder(d);
   return placeOrder(d);
 }
 
@@ -339,11 +358,19 @@ function lookupOrders(d) {
   const s = readSettings();
   const now = Date.now();
   const { groups } = findOrders(name, phone);
-  const orders = groups.slice(0, 20).map(({ id, rows }) => {
+  const DAY = 24 * 3600 * 1000;
+  const visible = groups.filter(({ rows }) => {
+    if (rows.some(x => String(x.g('손님 내역삭제')).trim())) return false;      // 손님이 지운 주문
+    const t = orderTime(rows[0].g('주문일시'));
+    return !(t && s.keepDays > 0 && now > t.getTime() + s.keepDays * DAY);    // 보관 기간 지난 주문
+  });
+  const fmtDay = ms => Utilities.formatDate(new Date(ms), TZ, 'M월 d일');
+  const orders = visible.slice(0, 20).map(({ id, rows }) => {
     const g0 = rows[0].g;
     const t = orderTime(g0('주문일시'));
     const status = statusOfRows(rows);
     const deadline = t ? t.getTime() + s.cancelHours * 3600 * 1000 : 0;
+    const delFrom = t ? t.getTime() + s.deleteDays * DAY : 0;
     const sender = String(g0('보내는 분') || '');
     return {
       orderId: id,
@@ -359,7 +386,10 @@ function lookupOrders(d) {
       })),
       status: status,
       canCancel: status === '입금 확인 중' && s.cancelHours > 0 && now < deadline,
-      cancelUntil: deadline ? Utilities.formatDate(new Date(deadline), TZ, 'MM월 dd일 HH:mm') : ''
+      cancelUntil: deadline ? Utilities.formatDate(new Date(deadline), TZ, 'MM월 dd일 HH:mm') : '',
+      canDelete: canHide(status, t, s),
+      deleteFrom: (status === '입금 확인 완료' || status === '발송 준비 중') && delFrom > now ? fmtDay(delFrom) : '',
+      autoGone: t && s.keepDays > 0 ? fmtDay(t.getTime() + s.keepDays * DAY) : ''
     };
   });
   return json({ ok: true, orders: orders, bank: s.bank, phone: s.phone });
@@ -393,6 +423,36 @@ function cancelOrder(d) {
     return json({ ok: true });
   } catch (err) {
     return json({ ok: false, error: '취소 중 문제가 생겼어요.' });
+  } finally {
+    try { lock.releaseLock(); } catch (x) {}
+  }
+}
+
+// 손님이 내역을 지울 수 있는지: 입금 확인된(또는 발송 준비 중) 주문은 주문일로부터 정한 일수가 지나야, 취소된 주문은 언제든
+function canHide(status, t, s) {
+  if (status === '취소됨') return true;
+  if (status !== '입금 확인 완료' && status !== '발송 준비 중') return false;
+  return !!t && Date.now() >= t.getTime() + s.deleteDays * 24 * 3600 * 1000;
+}
+
+/* ---------- 손님 내역 지우기 (손님 화면에서만 숨김) ---------- */
+function hideOrder(d) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+    const name = str(d.name, 30).replace(/\s/g, ''), phone = digits(d.phone), id = str(d.orderId, 20);
+    const s = readSettings();
+    const { sh, groups } = findOrders(name, phone);
+    const hit = groups.find(x => x.id === id);
+    if (!hit) return json({ ok: false, error: '주문을 찾지 못했어요.' });
+    const st = statusOfRows(hit.rows);
+    if (!canHide(st, orderTime(hit.rows[0].g('주문일시')), s))
+      return json({ ok: false, error: st === '입금 확인 중' ? '입금 확인 전인 주문은 지울 수 없어요.' : '주문일로부터 ' + s.deleteDays + '일이 지나야 지울 수 있어요.' });
+    const when = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm');
+    hit.rows.forEach(x => sh.getRange(x.row, COL['손님 내역삭제']).setValue(when));
+    return json({ ok: true });
+  } catch (err) {
+    return json({ ok: false, error: '지우는 중 문제가 생겼어요.' });
   } finally {
     try { lock.releaseLock(); } catch (x) {}
   }
